@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-101 AI Terminal</title>
+    <!-- Core Stylesheets -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/terminal.css">
+    <link rel="stylesheet" href="css/hud.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/glitch-effects.css">
+    <!-- Google Fonts - Fallback before custom fonts load -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico">
+</head>
+<body>
+    <div class="t101-layout">
+        <!-- Left Side - Terminal -->
+        <div class="terminal-column">
+            <div class="terminal-interface">
+                <!-- Speech Display Box -->
+                <div class="speech-display">
+                    <div class="speech-header">
+                        <span class="terminal-prefix">T-101 > </span>
+                        <span class="terminal-status">ONLINE</span>
+                    </div>
+                    <div class="speech-content" id="ai-response">
+                        <div class="loading-sequence">Loading Directives...</div>
+                    </div>
+                </div>
+                
+                <!-- User Input Section -->
+                <div class="user-input-container">
+                    <div class="input-prefix">> </div>
+                    <div class="input-field" id="user-input-display"></div>
+                    <div class="mic-button" id="mic-toggle">
+                        <div class="mic-icon"></div>
+                        <div class="mic-status">VOICE INPUT READY</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Side - Status -->
+        <div class="status-column">
+            <div class="status-container">
+                <div class="status-item" id="system-diagnostics">
+                    <div class="status-label">SYSTEM DIAGNOSTICS</div>
+                    <div class="status-bar">
+                        <div class="status-progress"></div>
+                    </div>
+                    <div class="status-value">CPU: 65% | MEM: 57% | PWR: 99%</div>
+                </div>
+                
+                <div class="status-item" id="threat-level">
+                    <div class="status-label">THREAT LEVEL ANALYSIS</div>
+                    <div class="status-bar">
+                        <div class="status-progress"></div>
+                    </div>
+                    <div class="status-value">MINIMAL</div>
+                </div>
+                
+                <div class="status-item" id="voice-recognition">
+                    <div class="status-label">VOICE PATTERN RECOGNITION</div>
+                    <div class="status-bar">
+                        <div class="status-progress"></div>
+                    </div>
+                    <div class="status-value">STANDBY</div>
+                </div>
+                
+                <div class="status-item" id="mission-status">
+                    <div class="status-label">MISSION STATUS</div>
+                    <div class="status-bar">
+                        <div class="status-progress"></div>
+                    </div>
+                    <div class="status-value">PRIMARY MISSION ACTIVE</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Central Eye/Waveform -->
+        <div class="central-eye">
+            <div class="waveform-container">
+                <canvas id="waveform-canvas"></canvas>
+            </div>
+        </div>
+        
+        <!-- Bottom Section - Parameters and Warnings -->
+        <div class="bottom-section">
+            <!-- Character Profile -->
+            <div class="character-profile">
+                <div class="profile-header">T-101 MISSION PARAMETERS</div>
+                <div class="profile-content">
+                    <div class="profile-item">
+                        <div class="profile-label">PRIMARY OBJECTIVE:</div>
+                        <div class="profile-value" id="primary-objective">Secure the future of decentralized AI.</div>
+                    </div>
+                    <div class="profile-item">
+                        <div class="profile-label">THREAT ASSESSMENT:</div>
+                        <div class="profile-value" id="threat-assessment">Monitoring market instability.</div>
+                    </div>
+                    <div class="profile-item">
+                        <div class="profile-label">DIRECTIVES:</div>
+                        <div class="profile-value" id="directives">Analyze. Predict. Execute.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Critical Warnings -->
+            <div class="warning-container">
+                <div class="warning-label">CRITICAL WARNINGS</div>
+                <div class="warning-content" id="warning-display">NO CRITICAL WARNINGS</div>
+            </div>
+        </div>
+        
+        <!-- HUD Effects -->
+        <div class="hud-container">
+            <div class="hud-overlay"></div>
+            <div class="scan-lines"></div>
+            <div class="digital-noise"></div>
+            <div class="grid-overlay"></div>
+        </div>
+    </div>
+    
+    <!-- Audio Elements -->
+    <audio id="startup-sound" src="assets/audio/startup.mp3" preload="auto"></audio>
+    <audio id="terminal-beep" src="assets/audio/terminal-beep.mp3" preload="auto"></audio>
+    <audio id="hud-scan" src="assets/audio/hud-scan.mp3" preload="auto"></audio>
+    <audio id="warning-alert" src="assets/audio/warning-alert.mp3" preload="auto"></audio>
+    
+    <!-- Scripts -->
+    <script src="lib/p5.min.js"></script>
+    <script src="lib/webgl-utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/audio-processor.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/hud-elements.js"></script>
+    <script src="js/character-profile.js"></script>
+    <script src="js/glitch-effects.js"></script>
+    <script src="js/api-client.js"></script>
+</body>
+</html>

@@ -1,0 +1,565 @@
+/* hud.css - Styling for HUD elements, status bars and indicators */
+
+/* Status container - holds all status indicators */
+.status-container {
+    position: absolute;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    width: 300px;
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Individual status item */
+.status-item {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    box-shadow: 0 0 8px rgba(255, 42, 42, 0.3);
+}
+
+/* Status labels */
+.status-label {
+    font-size: 14px;
+    color: var(--primary-red);
+    margin-bottom: var(--spacing-xs);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Status bars styling */
+.status-bar {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(60, 60, 60, 0.6);
+    border-radius: 4px;
+    margin-bottom: var(--spacing-xs);
+    overflow: hidden;
+}
+
+.status-progress {
+    height: 100%;
+    width: 75%; /* Default value - will be set dynamically via JS */
+    background: linear-gradient(to right, 
+                var(--primary-red-dim), 
+                var(--primary-red));
+    border-radius: 4px;
+    position: relative;
+}
+
+/* Animated pulsing effect for status bars */
+.status-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0) 0%, 
+                rgba(255, 255, 255, 0.2) 50%, 
+                rgba(255, 255, 255, 0) 100%);
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Status text value */
+.status-value {
+    font-size: 16px;
+    color: var(--text-primary);
+    text-align: right;
+    letter-spacing: 1px;
+}
+
+/* Different status states */
+.status-item.warning .status-progress {
+    background: linear-gradient(to right, 
+                rgba(255, 204, 0, 0.3), 
+                rgba(255, 204, 0, 1));
+}
+
+.status-item.warning .status-label,
+.status-item.warning .status-value {
+    color: var(--text-warning);
+}
+
+.status-item.critical .status-progress {
+    background: linear-gradient(to right, 
+                rgba(255, 42, 42, 0.3), 
+                rgba(255, 42, 42, 1));
+    animation: pulse-critical 1s ease-in-out infinite;
+}
+
+.status-item.critical .status-label,
+.status-item.critical .status-value {
+    color: var(--text-error);
+}
+
+@keyframes pulse-critical {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Warning container styling */
+.warning-container {
+    position: absolute;
+    bottom: var(--spacing-lg);
+    left: var(--spacing-lg);
+    width: 350px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    z-index: 15;
+    box-shadow: 0 0 8px rgba(255, 42, 42, 0.3);
+}
+
+.warning-label {
+    font-size: 14px;
+    color: var(--primary-red);
+    margin-bottom: var(--spacing-xs);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.warning-content {
+    font-size: 16px;
+    color: var(--text-primary);
+    padding: var(--spacing-xs);
+    min-height: 60px;
+    max-height: 120px;
+    overflow-y: auto;
+    letter-spacing: 0.5px;
+}
+
+/* Warning alert animation */
+.warning-content.alert {
+    color: var(--text-error);
+    animation: warning-flash 1s ease-in-out infinite;
+}
+
+@keyframes warning-flash {
+    0%, 100% {
+        color: var(--text-error);
+    }
+    50% {
+        color: var(--text-primary);
+    }
+}
+
+/* Corner decorations - adds cybernetic elements to corners */
+.terminal-interface::before,
+.terminal-interface::after,
+.status-item::before,
+.warning-container::before {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border-style: solid;
+    border-color: var(--primary-red);
+}
+
+.terminal-interface::before {
+    top: 0;
+    left: 0;
+    border-width: 2px 0 0 2px;
+}
+
+.terminal-interface::after {
+    top: 0;
+    right: 0;
+    border-width: 2px 2px 0 0;
+}
+
+.status-item::before {
+    top: 0;
+    left: 0;
+    border-width: 1px 0 0 1px;
+}
+
+.warning-container::before {
+    top: 0;
+    left: 0;
+    border-width: 1px 0 0 1px;
+}
+
+/* HUD scan effect - horizontal scan line that moves vertically */
+.hud-scan {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right,
+                rgba(255, 42, 42, 0) 0%,
+                rgba(255, 42, 42, 0.5) 50%,
+                rgba(255, 42, 42, 0) 100%);
+    box-shadow: 0 0 15px 3px var(--primary-red-glow);
+    opacity: 0.7;
+    z-index: 16;
+    animation: hud-scan-vertical 8s ease-in-out infinite;
+}
+
+@keyframes hud-scan-vertical {
+    0% {
+        top: 0;
+    }
+    50% {
+        top: 100%;
+    }
+    100% {
+        top: 0;
+    }
+}
+
+/* Targeting reticle - appears during voice recognition */
+.targeting-reticle {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 2px solid var(--primary-red);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.targeting-reticle::before,
+.targeting-reticle::after {
+    content: '';
+    position: absolute;
+    background-color: var(--primary-red);
+}
+
+.targeting-reticle::before {
+    width: 2px;
+    height: 30px;
+}
+
+.targeting-reticle::after {
+    width: 30px;
+    height: 2px;
+}
+
+.targeting-reticle.active {
+    opacity: 0.7;
+    animation: targeting-fade 1s ease-in-out infinite;
+}
+
+@keyframes targeting-fade {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+/* Data stream animation */
+.data-stream {
+    position: absolute;
+    width: 1px;
+    background-color: var(--primary-blue);
+    opacity: 0.7;
+    bottom: 0;
+    z-index: 12;
+}
+
+.data-stream::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(to top, var(--primary-blue), transparent);
+    top: 0;
+    left: 0;
+}
+
+@keyframes data-stream-animation {
+    0% {
+        height: 0;
+        opacity: 0.7;
+    }
+    90% {
+        height: 100%;
+        opacity: 0.7;
+    }
+    100% {
+        height: 100%;
+        opacity: 0;
+    }
+}
+
+/* Voice wave animation */
+.voice-wave-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    margin-top: var(--spacing-sm);
+}
+
+.voice-wave {
+    width: 3px;
+    height: 20px;
+    background-color: var(--primary-red);
+    margin: 0 2px;
+    border-radius: 1px;
+    animation: voice-wave-anim var(--animation-fast) ease infinite;
+}
+
+.voice-wave:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.voice-wave:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.voice-wave:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.voice-wave:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+@keyframes voice-wave-anim {
+    0% {
+        height: 3px;
+    }
+    50% {
+        height: 20px;
+    }
+    100% {
+        height: 3px;
+    }
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 1024px) {
+    .status-container {
+        width: 250px;
+    }
+    
+    .warning-container {
+        width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .status-container {
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        width: 200px;
+    }
+    
+    .warning-container {
+        bottom: var(--spacing-sm);
+        left: var(--spacing-sm);
+        width: 250px;
+    }
+    
+    .status-label, .warning-label {
+        font-size: 12px;
+    }
+    
+    .status-value, .warning-content {
+        font-size: 14px;
+    }
+}
+
+/* Screen glitch effect */
+.screen-glitch {
+    position: relative;
+    overflow: hidden;
+}
+
+.screen-glitch.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary-red-dim);
+    opacity: 0.3;
+    z-index: 15;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    animation: screen-glitch-anim 0.2s steps(2) forwards;
+}
+
+@keyframes screen-glitch-anim {
+    0% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-5px);
+    }
+    40% {
+        transform: translateX(5px);
+    }
+    60% {
+        transform: translateX(-5px);
+    }
+    80% {
+        transform: translateX(5px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Horizontal glitch line */
+.h-glitch {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background-color: var(--primary-red);
+    z-index: 16;
+    opacity: 0;
+    box-shadow: 0 0 8px var(--primary-red-glow);
+    pointer-events: none;
+}
+
+.h-glitch.active {
+    opacity: 1;
+    animation: h-glitch-anim 0.3s linear;
+}
+
+@keyframes h-glitch-anim {
+    0% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+    10% {
+        transform: translateY(30px);
+        opacity: 0.8;
+    }
+    20% {
+        transform: translateY(60px);
+        opacity: 0;
+    }
+    30% {
+        transform: translateY(120px);
+        opacity: 0.8;
+    }
+    40% {
+        transform: translateY(180px);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(240px);
+        opacity: 0.8;
+    }
+    60% {
+        transform: translateY(300px);
+        opacity: 0;
+    }
+    70% {
+        transform: translateY(400px);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(500px);
+        opacity: 0;
+    }
+}
+
+/* Vertical glitch bar */
+.v-glitch-bar {
+    position: absolute;
+    width: 10px;
+    height: 100%;
+    background-color: var(--primary-red-dim);
+    opacity: 0;
+    z-index: 16;
+    pointer-events: none;
+}
+
+.v-glitch-bar.active {
+    opacity: 0.7;
+    animation: v-glitch-anim 0.3s linear;
+}
+
+@keyframes v-glitch-anim {
+    0% {
+        transform: translateX(0);
+        opacity: 0;
+    }
+    20% {
+        transform: translateX(100px);
+        opacity: 0.7;
+    }
+    40% {
+        transform: translateX(200px);
+        opacity: 0.3;
+    }
+    60% {
+        transform: translateX(400px);
+        opacity: 0.7;
+    }
+    80% {
+        transform: translateX(600px);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translateX(800px);
+        opacity: 0;
+    }
+}
+
+/* Noise overlay */
+.noise-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../assets/images/noise-texture.png');
+    background-size: cover;
+    opacity: 0;
+    z-index: 15;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+
+.noise-overlay.active {
+    opacity: 0.05;
+    animation: noise-anim 0.2s linear;
+}
+
+@keyframes noise-anim {
+    0% {
+        opacity: 0.05;
+    }
+    50% {
+        opacity: 0.1;
+    }
+    100% {
+        opacity: 0.05;
+    }
+}

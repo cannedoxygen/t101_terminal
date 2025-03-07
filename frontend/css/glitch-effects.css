@@ -1,0 +1,282 @@
+/* glitch-effects.css - Defines glitch and distortion effects for the T-101 Terminal */
+
+/* Base glitch effect - applies subtle distortion */
+.glitch {
+    position: relative;
+    display: inline-block;
+}
+
+/* Text glitch effect with before/after pseudo-elements */
+.text-glitch {
+    position: relative;
+    display: inline-block;
+}
+
+.text-glitch::before,
+.text-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.text-glitch::before {
+    left: -2px;
+    text-shadow: -1px 0 var(--primary-red);
+    clip: rect(24px, 550px, 90px, 0);
+    animation: text-glitch-anim-1 3s infinite linear alternate-reverse;
+}
+
+.text-glitch::after {
+    left: 2px;
+    text-shadow: -1px 0 var(--primary-blue);
+    clip: rect(85px, 550px, 140px, 0);
+    animation: text-glitch-anim-2 2.5s infinite linear alternate-reverse;
+}
+
+@keyframes text-glitch-anim-1 {
+    0% {
+        clip: rect(52px, 550px, 21px, 0);
+    }
+    20% {
+        clip: rect(40px, 550px, 73px, 0);
+    }
+    40% {
+        clip: rect(12px, 550px, 11px, 0);
+    }
+    60% {
+        clip: rect(38px, 550px, 87px, 0);
+    }
+    80% {
+        clip: rect(94px, 550px, 32px, 0);
+    }
+    100% {
+        clip: rect(49px, 550px, 70px, 0);
+    }
+}
+
+@keyframes text-glitch-anim-2 {
+    0% {
+        clip: rect(18px, 550px, 57px, 0);
+    }
+    20% {
+        clip: rect(18px, 550px, 78px, 0);
+    }
+    40% {
+        clip: rect(94px, 550px, 34px, 0);
+    }
+    60% {
+        clip: rect(37px, 550px, 14px, 0);
+    }
+    80% {
+        clip: rect(67px, 550px, 24px, 0);
+    }
+    100% {
+        clip: rect(27px, 550px, 16px, 0);
+    }
+}
+
+/* RGB split effect */
+.rgb-split {
+    position: relative;
+    display: inline-block;
+}
+
+.rgb-split::before,
+.rgb-split::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+}
+
+.rgb-split::before {
+    left: -1px;
+    color: #ff0000;
+}
+
+.rgb-split::after {
+    left: 1px;
+    color: #00ffff;
+}
+
+/* RGB split animation */
+.rgb-split-anim::before {
+    animation: rgb-split-before 0.4s infinite linear alternate;
+}
+
+.rgb-split-anim::after {
+    animation: rgb-split-after 0.4s infinite linear alternate;
+}
+
+@keyframes rgb-split-before {
+    0% {
+        transform: translateX(-1px);
+    }
+    100% {
+        transform: translateX(-3px);
+    }
+}
+
+@keyframes rgb-split-after {
+    0% {
+        transform: translateX(1px);
+    }
+    100% {
+        transform: translateX(3px);
+    }
+}
+
+/* Pixel sorting effect */
+.pixel-sort {
+    position: relative;
+    overflow: hidden;
+}
+
+.pixel-sort::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(255, 42, 42, 0.1) 50%,
+        rgba(255, 42, 42, 0.2) 55%,
+        rgba(255, 42, 42, 0.1) 60%,
+        transparent 60%
+    );
+    background-size: 100% 8px;
+    z-index: 15;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pixel-sort.active::before {
+    opacity: 1;
+    animation: pixel-sort-anim 0.3s steps(4);
+}
+
+@keyframes pixel-sort-anim {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(8px);
+    }
+}
+
+/* Text corruption effect */
+.text-corruption {
+    position: relative;
+}
+
+.text-corruption::after {
+    content: "ERROR";
+    position: absolute;
+    background-color: var(--bg-dark);
+    color: var(--primary-red);
+    padding: 0 var(--spacing-xs);
+    border-radius: 2px;
+    font-size: 12px;
+    top: 0;
+    right: -40px;
+    opacity: 0;
+}
+
+.text-corruption.active::after {
+    animation: text-corruption-anim 0.8s ease-in-out;
+}
+
+@keyframes text-corruption-anim {
+    0% {
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    20% {
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.8;
+    }
+    70% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Waveform animation for speech */
+.waveform-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--primary-red);
+    opacity: 0.5;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.waveform-active .waveform-circle {
+    animation: waveform-pulse var(--animation-medium) ease-out infinite;
+}
+
+@keyframes waveform-pulse {
+    0% {
+        width: 100px;
+        height: 100px;
+        opacity: 0.7;
+        border-width: 3px;
+    }
+    100% {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+
+/* Character flickering effect */
+.flicker {
+    animation: flicker 3s linear infinite;
+}
+
+@keyframes flicker {
+    0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+        opacity: 1;
+    }
+    20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+        opacity: 0.33;
+    }
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .waveform-active .waveform-circle {
+        animation: waveform-pulse-mobile var(--animation-medium) ease-out infinite;
+    }
+    
+    @keyframes waveform-pulse-mobile {
+        0% {
+            width: 60px;
+            height: 60px;
+            opacity: 0.7;
+            border-width: 2px;
+        }
+        100% {
+            width: 180px;
+            height: 180px;
+            opacity: 0;
+            border-width: 1px;
+        }
+    }
+}

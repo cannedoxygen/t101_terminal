@@ -1,0 +1,282 @@
+cat > frontend/css/terminal.css << 'EOL'
+/* terminal.css - Styling for the terminal interface components */
+
+/* Speech display styling */
+.speech-display {
+    background-color: rgba(10, 10, 10, 0.8);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 6px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    z-index: 25;
+    min-height: 200px; /* Ensure minimum height */
+    max-height: 60vh; /* Prevent from getting too large */
+}
+
+.speech-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--primary-red-dim);
+    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.terminal-prefix {
+    color: var(--primary-red);
+    font-weight: bold;
+}
+
+.terminal-status {
+    background-color: rgba(0, 179, 255, 0.2);
+    color: var(--primary-blue);
+    padding: 2px var(--spacing-sm);
+    border-radius: 4px;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.speech-content {
+    flex: 1;
+    overflow-y: auto;
+    line-height: 1.5;
+    color: var(--text-primary);
+    padding-right: var(--spacing-sm);
+    position: relative;
+}
+
+/* Style for the scrollbar in speech content */
+.speech-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.speech-content::-webkit-scrollbar-track {
+    background: rgba(30, 30, 30, 0.5);
+    border-radius: 4px;
+}
+
+.speech-content::-webkit-scrollbar-thumb {
+    background: var(--primary-red-dim);
+    border-radius: 4px;
+}
+
+.speech-content::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-red);
+}
+
+/* Character profile styling */
+.character-profile {
+    background-color: rgba(10, 10, 10, 0.8);
+    border: 1px solid var(--primary-blue-dim);
+    border-radius: 6px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    max-height: 30%;
+    min-height: 150px; /* Ensure minimum height */
+}
+
+.profile-header {
+    color: var(--primary-blue);
+    font-weight: bold;
+    border-bottom: 1px solid var(--primary-blue-dim);
+    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    letter-spacing: 1px;
+}
+
+.profile-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.profile-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.profile-label {
+    color: var(--text-secondary);
+    min-width: 200px;
+    white-space: nowrap;
+}
+
+.profile-value {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+/* Waveform container styling */
+.waveform-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 22;
+    pointer-events: none;
+}
+
+#waveform-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* User input styling */
+.user-input-container {
+    display: flex;
+    align-items: center;
+    background-color: rgba(10, 10, 10, 0.8);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 6px;
+    padding: var(--spacing-md);
+    position: relative;
+    z-index: 25;
+    min-height: 50px; /* Ensure minimum height */
+}
+
+.input-prefix {
+    color: var(--primary-red);
+    font-weight: bold;
+    margin-right: var(--spacing-sm);
+}
+
+.input-field {
+    flex: 1;
+    min-height: 20px;
+    color: var(--text-primary);
+    outline: none;
+    caret-color: var(--primary-red);
+    position: relative;
+}
+
+.input-field::after {
+    content: '|';
+    animation: cursor-blink var(--animation-fast) step-end infinite;
+}
+
+.mic-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: rgba(20, 20, 20, 0.8);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.mic-button:hover {
+    background-color: var(--primary-red-dim);
+}
+
+.mic-icon {
+    width: 20px;
+    height: 20px;
+    background-color: var(--primary-red);
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>') no-repeat 50% 50%;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>') no-repeat 50% 50%;
+}
+
+.mic-status {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Fix for layout to ensure no overlapping containers */
+.terminal-interface {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+}
+
+/* Active recording state */
+.mic-button.recording {
+    background-color: rgba(255, 42, 42, 0.2);
+    animation: pulse var(--animation-medium) ease-in-out infinite;
+}
+
+.mic-button.recording .mic-status {
+    color: var(--primary-red);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 var(--primary-red-glow);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 42, 42, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 42, 42, 0);
+    }
+}
+
+/* Typing animation for terminal text */
+.typing {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 3px solid var(--primary-red);
+    width: 0;
+    animation: typing 1.5s steps(30, end) forwards,
+               blink 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink {
+    from, to { border-color: transparent }
+    50% { border-color: var(--primary-red) }
+}
+
+/* Terminal response styling */
+.response-line {
+    margin-bottom: var(--spacing-sm);
+    word-wrap: break-word;
+}
+
+.response-error {
+    color: var(--text-error);
+    font-weight: bold;
+}
+
+.response-warning {
+    color: var(--text-warning);
+}
+
+.response-success {
+    color: var(--primary-blue);
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .profile-item {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .profile-label {
+        min-width: unset;
+    }
+    
+    .mic-status {
+        display: none;
+    }
+    
+    .mic-button {
+        padding: var(--spacing-sm);
+    }
+}
+EOL

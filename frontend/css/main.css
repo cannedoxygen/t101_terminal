@@ -1,0 +1,453 @@
+/* Replace the beginning of your main.css with these layout styles */
+/* Add only these positioning styles to your main.css */
+
+/* Keep your existing CSS variables and other styles */
+/* Just add/modify these positioning rules */
+
+/* Main container positioning */
+.t101-layout {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-black);
+}
+
+/* Terminal positioning (left side) */
+.terminal-column {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 85%;
+    padding: 20px;
+    z-index: 20;
+}
+
+/* Status indicators positioning (right side) */
+.status-column {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 35%;
+    height: 70%;
+    padding: 20px;
+    z-index: 20;
+}
+
+/* Bottom section with mission parameters and warnings */
+.bottom-section {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 130px;
+    display: flex;
+    padding: 15px;
+    z-index: 20;
+    background-color: rgba(20, 20, 20, 0.8);
+    border-top: 1px solid var(--primary-red-dim);
+}
+
+/* Mission parameters section */
+.character-profile {
+    flex: 3;
+    margin-right: 15px;
+    background-color: var(--bg-terminal);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    padding: 10px;
+    color: var(--text-primary);
+}
+
+/* Make sure headers are visible */
+.profile-header {
+    color: var(--primary-red);
+    border-bottom: 1px solid var(--primary-red-dim);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+}
+
+.profile-label {
+    color: var(--text-secondary);
+}
+
+.profile-value {
+    color: var(--text-primary);
+}
+
+/* Warning container styling */
+.warning-container {
+    flex: 1;
+    background-color: var(--bg-terminal);
+    border: 1px solid var(--primary-red);
+    border-radius: 4px;
+    padding: 10px;
+    color: var(--text-primary);
+}
+
+.warning-label {
+    color: var(--primary-red);
+    border-bottom: 1px solid var(--primary-red-dim);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+}
+
+.warning-content {
+    color: var(--text-warning);
+}
+
+/* Central eye/waveform */
+.central-eye {
+    position: absolute;
+    top: 55%;
+    left: 70%;
+    transform: translate(-50%, -50%);
+    width: 180px;
+    height: 180px;
+    z-index: 30;
+}
+
+/* Status items styling */
+.status-container {
+    background-color: var(--bg-terminal);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    padding: 10px;
+    color: var(--text-primary);
+}
+
+.status-item {
+    margin-bottom: 8px;
+}
+
+.status-label {
+    color: var(--text-secondary);
+}
+
+.status-value {
+    color: var(--text-primary);
+}
+
+/* Terminal interface */
+.terminal-interface {
+    background-color: var(--bg-terminal);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    height: 100%;
+    color: var(--text-primary);
+}
+
+/* Make sure text is visible */
+.speech-content, 
+.input-field,
+.terminal-prefix,
+.terminal-status {
+    color: var(--text-primary);
+}
+
+.speech-header {
+    border-bottom: 1px solid var(--primary-red-dim);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.terminal-prefix {
+    color: var(--primary-red);
+}
+
+/* Base reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Share Tech Mono', monospace; /* Fallback */
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-black);
+    color: var(--text-primary);
+}
+
+/* Main layout structure - top two-column layout */
+.t101-layout {
+    display: flex;
+    width: 100%;
+    height: 80vh; /* Take 80% of viewport height, leaving room for bottom containers */
+    overflow: hidden;
+}
+
+/* Left column - Terminal */
+.terminal-column {
+    flex: 0 0 60%; /* Takes 60% of width */
+    height: 100%;
+    position: relative;
+    background-color: var(--bg-black);
+    border-right: 2px solid var(--primary-red-dim);
+    z-index: 10;
+}
+
+/* Right column - Status */
+.info-column {
+    flex: 1; /* Takes remaining width */
+    height: 100%;
+    position: relative;
+    background-color: var(--bg-black);
+    z-index: 10;
+}
+
+/* Terminal interface adjustment */
+.terminal-interface {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-terminal);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    z-index: 5;
+}
+
+/* Status section in right column */
+.status-section {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    padding: var(--spacing-md);
+    overflow: auto;
+    z-index: 5;
+}
+
+/* Status container grid layout */
+.status-container {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    z-index: 5;
+}
+
+/* Status item styling */
+.status-item {
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    box-shadow: 0 0 8px var(--primary-red-glow);
+}
+
+/* Bottom containers layout */
+.bottom-containers {
+    display: flex;
+    width: 100%;
+    height: 20vh; /* Takes remaining 20% of viewport height */
+    overflow: hidden;
+    border-top: 2px solid var(--primary-red-dim);
+}
+
+/* Left bottom container - Mission parameters */
+.mission-container {
+    flex: 1; /* Equal width */
+    position: relative;
+    background-color: var(--bg-black);
+    border-right: 1px solid var(--primary-red-dim);
+    padding: var(--spacing-md);
+    overflow: auto;
+    z-index: 10;
+}
+
+/* Right bottom container - Warnings */
+.warnings-container {
+    flex: 1; /* Equal width */
+    position: relative;
+    background-color: var(--bg-black);
+    border-left: 1px solid var(--primary-red-dim);
+    padding: var(--spacing-md);
+    overflow: auto;
+    z-index: 10;
+}
+
+/* Center pulsating eye */
+.pulsating-eye-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    z-index: 20; /* Above everything else */
+    pointer-events: none; /* Allow clicks to pass through */
+}
+
+/* Waveform canvas styling */
+.waveform-container {
+    width: 100%;
+    height: 100%;
+}
+
+#waveform-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* Add pulsating effect to the eye */
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+.pulsating-eye-container {
+    animation: pulse 3s infinite ease-in-out;
+    box-shadow: 0 0 30px var(--primary-red-glow);
+    border-radius: 50%;
+}
+
+/* Profile styling */
+.character-profile {
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+}
+
+.profile-header {
+    font-size: 1.2em;
+    color: var(--primary-red);
+    margin-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--primary-red-dim);
+    padding-bottom: var(--spacing-xs);
+}
+
+.profile-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.profile-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.profile-value {
+    color: var(--text-primary);
+    font-size: 1em;
+}
+
+/* Warning container styling */
+.warning-container {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--primary-red-dim);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    box-shadow: 0 0 8px var(--primary-red-glow);
+    display: flex;
+    flex-direction: column;
+    z-index: 5;
+}
+
+.warning-label {
+    color: var(--primary-red);
+    margin-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--primary-red-dim);
+    padding-bottom: var(--spacing-xs);
+}
+
+.warning-content {
+    flex: 1;
+    color: var(--text-warning);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .terminal-column {
+        flex: 0 0 55%; /* Slightly smaller on medium screens */
+    }
+    
+    .pulsating-eye-container {
+        width: 250px;
+        height: 250px;
+    }
+}
+
+@media (max-width: 992px) {
+    .status-container {
+        grid-template-columns: 1fr; /* Single column on smaller screens */
+    }
+    
+    .pulsating-eye-container {
+        width: 200px;
+        height: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Switch to vertical layout on mobile */
+    .t101-layout {
+        flex-direction: column;
+        height: 60vh; /* Take 60% of viewport height */
+    }
+    
+    .terminal-column {
+        flex: 0 0 60%;
+        width: 100%;
+        border-right: none;
+        border-bottom: 2px solid var(--primary-red-dim);
+    }
+    
+    .info-column {
+        flex: 0 0 40%;
+        width: 100%;
+    }
+    
+    .bottom-containers {
+        flex-direction: column;
+        height: 40vh; /* Take 40% of viewport height */
+    }
+    
+    .mission-container, .warnings-container {
+        width: 100%;
+        border: none;
+    }
+    
+    .mission-container {
+        border-bottom: 1px solid var(--primary-red-dim);
+    }
+    
+    .pulsating-eye-container {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+/* Make HUD elements display correctly in each section */
+.terminal-column .scan-lines,
+.terminal-column .digital-noise,
+.terminal-column .grid-overlay,
+.status-section .scan-lines,
+.status-section .digital-noise,
+.status-section .grid-overlay,
+.mission-container .scan-lines,
+.mission-container .digital-noise,
+.mission-container .grid-overlay,
+.warnings-container .scan-lines,
+.warnings-container .digital-noise,
+.warnings-container .grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}

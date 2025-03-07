@@ -1,0 +1,364 @@
+/* animations.css - Defines animations for the T-101 Terminal Interface */
+
+/* Animations for the waveform visualization */
+.waveform-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--primary-red);
+    opacity: 0.5;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.waveform-active .waveform-circle {
+    animation: waveform-pulse var(--animation-medium) ease-out infinite;
+}
+
+@keyframes waveform-pulse {
+    0% {
+        width: 100px;
+        height: 100px;
+        opacity: 0.7;
+        border-width: 3px;
+    }
+    100% {
+        width: 300px;
+        height: 300px;
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+
+/* Startup sequence animations */
+.startup-sequence {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-black);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1s ease-out;
+}
+
+.startup-sequence.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.startup-logo {
+    color: var(--primary-red);
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: var(--spacing-xl);
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.startup-progress {
+    width: 300px;
+    height: 4px;
+    background-color: rgba(60, 60, 60, 0.6);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-lg);
+}
+
+.startup-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, 
+                var(--primary-red-dim), 
+                var(--primary-red));
+    width: 0;
+    animation: startup-loading 3s ease-in-out forwards;
+}
+
+@keyframes startup-loading {
+    0% {
+        width: 0;
+    }
+    20% {
+        width: 20%;
+    }
+    50% {
+        width: 50%;
+    }
+    70% {
+        width: 70%;
+    }
+    90% {
+        width: 90%;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+.startup-status {
+    color: var(--text-secondary);
+    font-size: 16px;
+    text-align: center;
+    height: 20px;
+}
+
+/* Loading animation */
+.loading-dots::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+}
+
+/* Text typing animation with variable speed */
+.typing-text {
+    display: inline-block;
+    overflow: hidden;
+    white-space: pre-wrap;
+    margin: 0;
+    border-right: 2px solid var(--primary-red);
+    max-width: fit-content;
+}
+
+.char {
+    opacity: 0;
+    animation: type-in 0.1s forwards;
+}
+
+@keyframes type-in {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Character profile loading animation */
+.profile-loading {
+    position: relative;
+}
+
+.profile-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--primary-blue-dim),
+        transparent
+    );
+    animation: profile-loading 1.5s infinite;
+}
+
+@keyframes profile-loading {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Voice recognition wave animation */
+.voice-wave {
+    width: 3px;
+    height: 20px;
+    background-color: var(--primary-red);
+    margin: 0 1px;
+    border-radius: 1px;
+    animation: voice-wave-anim var(--animation-fast) ease infinite;
+}
+
+.voice-wave-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    margin-top: var(--spacing-sm);
+}
+
+.voice-wave:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.voice-wave:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.voice-wave:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.voice-wave:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+@keyframes voice-wave-anim {
+    0% {
+        height: 3px;
+    }
+    50% {
+        height: 20px;
+    }
+    100% {
+        height: 3px;
+    }
+}
+
+/* Rotation animation for scan effect */
+.rotating-element {
+    animation: rotate var(--animation-slow) linear infinite;
+    transform-origin: center;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Data stream animation */
+.data-stream {
+    position: absolute;
+    width: 1px;
+    background: var(--primary-blue);
+    opacity: 0.7;
+    bottom: 0;
+    z-index: 12;
+}
+
+.data-stream::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(to top, var(--primary-blue), transparent);
+    top: 0;
+    left: 0;
+}
+
+/* For creating multiple data streams with JS */
+@keyframes data-stream-animation {
+    0% {
+        height: 0;
+        opacity: 0.7;
+    }
+    90% {
+        height: 100%;
+        opacity: 0.7;
+    }
+    100% {
+        height: 100%;
+        opacity: 0;
+    }
+}
+
+/* Button press animation */
+.button-press {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+/* Fade in animation */
+.fade-in {
+    opacity: 0;
+    animation: fade-in var(--animation-medium) ease forwards;
+}
+
+@keyframes fade-in {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Fade out animation */
+.fade-out {
+    opacity: 1;
+    animation: fade-out var(--animation-medium) ease forwards;
+}
+
+@keyframes fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
+/* Slide in animation */
+.slide-in {
+    transform: translateY(20px);
+    opacity: 0;
+    animation: slide-in var(--animation-medium) ease forwards;
+}
+
+@keyframes slide-in {
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* For animating in sections one after another */
+.sequential-item {
+    opacity: 0;
+}
+
+.sequential-item:nth-child(1) {
+    animation: fade-in 0.5s ease forwards;
+}
+
+.sequential-item:nth-child(2) {
+    animation: fade-in 0.5s ease 0.2s forwards;
+}
+
+.sequential-item:nth-child(3) {
+    animation: fade-in 0.5s ease 0.4s forwards;
+}
+
+.sequential-item:nth-child(4) {
+    animation: fade-in 0.5s ease 0.6s forwards;
+}
+
+.sequential-item:nth-child(5) {
+    animation: fade-in 0.5s ease 0.8s forwards;
+}
+
+/* Media queries for responsive animations */
+@media (max-width: 768px) {
+    .waveform-active .waveform-circle {
+        animation: waveform-pulse var(--animation-medium) ease-out infinite;
+    }
+    
+    @keyframes waveform-pulse {
+        0% {
+            width: 50px;
+            height: 50px;
+            opacity: 0.7;
+        }
+        100% {
+            width: 200px;
+            height: 200px;
+            opacity: 0;
+        }
+    }
+    
+    .startup-logo {
+        font-size: 28px;
+    }
+    
+    .startup-progress {
+        width: 250px;
+    }
+}
