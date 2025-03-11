@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-101 Voice Test</title>
+    <style>
+        body {
+            background: #000;
+            color: #ff2a2a;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            padding: 50px;
+        }
+        button {
+            background: transparent;
+            color: #ff2a2a;
+            border: 1px solid #ff2a2a;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        input {
+            background: #111;
+            color: #ccc;
+            border: 1px solid #ff2a2a;
+            padding: 10px;
+            margin: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>T-101 Voice Test</h1>
+    <p>Test direct access to ElevenLabs API</p>
+    
+    <div>
+        <input type="text" id="textInput" value="I am T-101. Voice systems online and operational.">
+    </div>
+    
+    <div>
+        <button id="testBtn">TEST VOICE</button>
+    </div>
+    
+    <div id="status" style="margin-top: 20px;"></div>
+    
+    <script>
+        document.getElementById('testBtn').addEventListener('click', async function() {
+            const status = document.getElementById('status');
+            status.textContent = 'Generating speech...';
+            
+            try {
+                const text = document.getElementById('textInput').value || 'Voice test complete.';
+                
+                // Call API directly
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                // Get audio blob
+                const audioBlob = await response.blob();
+                
+                // Create audio element
+                const audio = new Audio(URL.createObjectURL(audioBlob));
+                
+                // Play audio
+                status.textContent = 'Playing audio...';
+                await audio.play();
+                
+                status.textContent = 'Voice test successful!';
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

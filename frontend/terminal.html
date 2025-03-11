@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-101 AI Terminal</title>
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico">
+    <style>
+        /* Core variables */
+        :root {
+            --bg-black: #0a0a0a;
+            --bg-dark: #121212;
+            --bg-terminal: rgba(16, 16, 16, 0.95);
+            --primary-red: rgb(255, 42, 42);
+            --primary-red-dim: rgba(255, 42, 42, 0.5);
+            --primary-red-glow: rgba(255, 42, 42, 0.3);
+            --primary-blue: rgb(0, 179, 255);
+            --primary-blue-dim: rgba(0, 179, 255, 0.5);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --text-error: #ff3c3c;
+            --text-warning: #ffcc00;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --animation-fast: 0.3s;
+            --animation-medium: 0.6s;
+            --animation-slow: 2s;
+        }
+
+        /* Base reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-black);
+            color: var(--text-primary);
+        }
+
+        /* Non-overlapping layout structure - Increased bottom row height */
+        .t101-layout {
+            display: grid;
+            grid-template-columns: 60% 40%;
+            grid-template-rows: 1fr 200px; /* Increased from 150px to 200px */
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Background effects - absolutely positioned behind everything */
+        .background-effects {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Grid overlay */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255, 42, 42, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 42, 42, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Scan lines effect */
+        .scan-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            opacity: 0.2;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Digital noise effect */
+        .digital-noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.05);
+            opacity: 0.1;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Terminal section */
+        .terminal-section {
+            grid-column: 1;
+            grid-row: 1;
+            padding: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Terminal interface */
+        .terminal-interface {
+            background-color: var(--bg-terminal);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 4px;
+            height: 100%;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            padding: var(--spacing-md);
+            position: relative;
+        }
+
+        /* Speech display styling */
+        .speech-display {
+            background-color: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 6px;
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .speech-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--primary-red-dim);
+            padding-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .terminal-prefix {
+            color: var(--primary-red);
+            font-weight: bold;
+        }
+
+        .terminal-status {
+            background-color: rgba(0, 179, 255, 0.2);
+            color: var(--primary-blue);
+            padding: 2px var(--spacing-sm);
+            border-radius: 4px;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .speech-content {
+            flex: 1;
+            overflow-y: auto;
+            line-height: 1.5;
+            color: var(--text-primary);
+            padding-right: var(--spacing-sm);
+            position: relative;
+        }
+
+        /* User input styling */
+        .user-input-container {
+            display: flex;
+            align-items: center;
+            background-color: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 6px;
+            padding: var(--spacing-md);
+            position: relative;
+        }
+
+        .input-prefix {
+            color: var(--primary-red);
+            font-weight: bold;
+            margin-right: var(--spacing-sm);
+        }
+
+        .input-field {
+            flex: 1;
+            min-height: 20px;
+            color: var(--text-primary);
+            outline: none;
+            caret-color: var(--primary-red);
+            position: relative;
+            background: transparent;
+            border: none;
+        }
+
+        .mic-button {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            cursor: pointer;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: rgba(20, 20, 20, 0.8);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .mic-icon {
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary-red);
+            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>') no-repeat 50% 50%;
+            -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>') no-repeat 50% 50%;
+        }
+
+        .mic-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Status section */
+        .status-section {
+            grid-column: 2;
+            grid-row: 1;
+            padding: 20px 20px 20px 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* T-101 Scanner Container - Increased height */
+        .scanner-container {
+            background-color: var(--bg-terminal);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 4px;
+            padding: 20px; /* Increased padding */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 20px;
+            flex: 1.5; /* Increased proportion */
+            min-height: 220px; /* Set minimum height */
+        }
+
+        .scanner-frame {
+            position: relative;
+            width: 180px; /* Increased from 160px */
+            height: 180px; /* Increased from 160px */
+        }
+
+        .t101-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--primary-red-dim);
+        }
+
+        /* Scanning rings - Adjusted sizes */
+        .scanner-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid var(--primary-red);
+            opacity: 0.7;
+        }
+
+        .outer-ring {
+            width: 180px; /* Increased from 160px */
+            height: 180px; /* Increased from 160px */
+            animation: rotate 120s linear infinite;
+        }
+
+        .middle-ring {
+            width: 150px; /* Increased from 130px */
+            height: 150px; /* Increased from 130px */
+            border-style: dashed;
+            animation: rotate-reverse 80s linear infinite;
+        }
+
+        .inner-ring {
+            width: 120px; /* Increased from 100px */
+            height: 120px; /* Increased from 100px */
+            animation: rotate 60s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes rotate-reverse {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+
+        /* Scan effect */
+        .scan-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary-red), transparent);
+            box-shadow: 0 0 10px var(--primary-red-glow);
+            opacity: 0.7;
+            animation: scan-animation 3s linear infinite;
+        }
+
+        @keyframes scan-animation {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        /* Status container - Reduced height */
+        .status-container {
+            background-color: var(--bg-terminal);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 4px;
+            padding: 12px; /* Reduced from 15px */
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Reduced from 15px */
+            flex: 1; /* Adjusted to make it proportionally smaller */
+            overflow-y: auto;
+        }
+
+        .status-item {
+            margin-bottom: 6px; /* Reduced from 8px */
+        }
+
+        .status-label {
+            color: var(--primary-red);
+            margin-bottom: 4px; /* Reduced from 5px */
+            font-size: 14px;
+        }
+
+        .status-bar {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(60, 60, 60, 0.6);
+            border-radius: 4px;
+            margin-bottom: 4px; /* Reduced from 5px */
+            overflow: hidden;
+        }
+
+        .status-progress {
+            height: 100%;
+            width: 75%;
+            background: linear-gradient(to right, 
+                        var(--primary-red-dim), 
+                        var(--primary-red));
+            border-radius: 4px;
+        }
+
+        /* Resource Container - Compact styling for CPU/MEM/PWR */
+        .resource-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px; /* Reduced from 5px */
+            background-color: rgba(10, 10, 10, 0.5);
+            border: 1px solid var(--primary-red-dim);
+            border-radius: 4px;
+            padding: 6px; /* Reduced from 8px */
+        }
+
+        .resource-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .resource-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .resource-value {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Status value */
+        .status-value {
+            font-size: 14px; /* Slightly reduced size */
+        }
+
+        /* Mission section - Bottom left */
+        .mission-section {
+            grid-column: 1;
+            grid-row: 2;
+            padding: 0 20px 20px 20px;
+            z-index: 10;
+        }
+
+        .mission-container {
+            background-color: var(--bg-terminal);
+            border: 1px solid var(--primary-blue-dim);
+            border-radius: 4px;
+            padding: 15px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mission-header {
+            color: var(--primary-blue);
+            border-bottom: 1px solid var(--primary-blue-dim);
+            margin-bottom: 15px; /* Increased from 10px */
+            padding-bottom: 5px;
+        }
+
+        .mission-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Increased from 8px */
+            flex: 1; /* Allow content to expand */
+        }
+
+        .mission-item {
+            display: flex;
+            margin-bottom: 8px; /* Increased from 5px */
+        }
+
+        .mission-label {
+            color: var(--text-secondary);
+            width: 160px;
+            margin-right: 15px; /* Increased from 10px */
+        }
+
+        .mission-value {
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        /* Warnings section - Bottom right */
+        .warnings-section {
+            grid-column: 2;
+            grid-row: 2;
+            padding: 0 20px 20px 0;
+            z-index: 10;
+        }
+
+        .warnings-container {
+            background-color: var(--bg-terminal);
+            border: 1px solid var(--primary-red);
+            border-radius: 4px;
+            padding: 15px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .warnings-header {
+            color: var(--primary-red);
+            border-bottom: 1px solid var(--primary-red-dim);
+            margin-bottom: 15px; /* Increased from 10px */
+            padding-bottom: 5px;
+        }
+
+        .warnings-content {
+            color: var(--text-warning);
+            flex: 1; /* Allow content to expand */
+        }
+
+        /* Waveform Visualization - Positioned in the middle of the screen */
+        .waveform-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .waveform-container.waveform-active {
+            opacity: 1;
+        }
+
+        #waveform-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .waveform-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid var(--primary-red);
+            opacity: 0.5;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            top: 50%;
+            left: 50%;
+        }
+
+        .waveform-active .waveform-circle {
+            animation: waveform-pulse var(--animation-medium) ease-out infinite;
+        }
+
+        @keyframes waveform-pulse {
+            0% {
+                width: 100px;
+                height: 100px;
+                opacity: 0.7;
+                border-width: 3px;
+            }
+            100% {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+                border-width: 1px;
+            }
+        }
+
+        /* Glitch effects */
+        .h-glitch {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-color: var(--primary-red);
+            z-index: 20;
+            opacity: 0;
+            box-shadow: 0 0 8px var(--primary-red-glow);
+            pointer-events: none;
+        }
+
+        .h-glitch.active {
+            opacity: 1;
+            animation: h-glitch-anim 0.3s linear;
+        }
+
+        @keyframes h-glitch-anim {
+            0% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+            10% {
+                transform: translateY(30px);
+                opacity: 0.8;
+            }
+            20% {
+                transform: translateY(60px);
+                opacity: 0;
+            }
+            30% {
+                transform: translateY(120px);
+                opacity: 0.8;
+            }
+            40% {
+                transform: translateY(180px);
+                opacity: 0;
+            }
+            50% {
+                transform: translateY(240px);
+                opacity: 0.8;
+            }
+            60% {
+                transform: translateY(300px);
+                opacity: 0;
+            }
+            70% {
+                transform: translateY(400px);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(500px);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive adaptations */
+        @media (max-width: 1200px) {
+            .t101-layout {
+                grid-template-columns: 55% 45%;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .t101-layout {
+                grid-template-columns: 50% 50%;
+            }
+            
+            .status-section {
+                padding: 15px 15px 15px 0;
+            }
+            
+            .terminal-section {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .t101-layout {
+                grid-template-columns: 100%;
+                grid-template-rows: 1fr 1fr 200px 200px; /* Adjusted to match new height */
+            }
+            
+            .terminal-section {
+                grid-column: 1;
+                grid-row: 1;
+                padding: 15px;
+            }
+            
+            .status-section {
+                grid-column: 1;
+                grid-row: 2;
+                padding: 0 15px 15px 15px;
+            }
+            
+            .mission-section {
+                grid-column: 1;
+                grid-row: 3;
+                padding: 0 15px 15px 15px;
+            }
+            
+            .warnings-section {
+                grid-column: 1;
+                grid-row: 4;
+                padding: 0 15px 15px 15px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .t101-layout {
+                grid-template-rows: 35vh 30vh 17.5vh 17.5vh; /* Adjusted proportions */
+            }
+            
+            .mission-item {
+                flex-direction: column;
+            }
+            
+            .mission-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .resource-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .resource-item {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .resource-label {
+                margin-right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="t101-layout">
+        <!-- Background Effects - Positioned behind everything with low z-index -->
+        <div class="background-effects">
+            <div class="grid-overlay"></div>
+            <div class="scan-lines"></div>
+            <div class="digital-noise"></div>
+        </div>
+        
+        <!-- Terminal Section - Top Left -->
+        <div class="terminal-section">
+            <div class="terminal-interface">
+                <!-- Speech Display Box -->
+                <div class="speech-display">
+                    <div class="speech-header">
+                        <span class="terminal-prefix">T-101 > </span>
+                        <span class="terminal-status">ONLINE</span>
+                    </div>
+                    <div class="speech-content" id="ai-response">
+                        <div class="loading-sequence">Loading Directives...</div>
+                    </div>
+                </div>
+                
+                <!-- User Input Section -->
+                <div class="user-input-container">
+                    <div class="input-prefix">> </div>
+                    <div class="input-field" id="user-input-display" contenteditable="true"></div>
+                    <div class="mic-button" id="mic-toggle">
+                        <div class="mic-icon"></div>
+                        <div class="mic-status">VOICE INPUT READY</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Section - Top Right -->
+        <div class="status-section">
+            <!-- T-101 Scanner - Increased height -->
+            <div class="scanner-container">
+                <div class="scanner-frame">
+                    <img src="assets/images/t101.png" alt="T-101" class="t101-image">
+                    <div class="scanner-ring outer-ring"></div>
+                    <div class="scanner-ring middle-ring"></div>
+                    <div class="scanner-ring inner-ring"></div>
+                    <div class="scan-effect"></div>
+                </div>
+            </div>
+            
+            <!-- Status Container - Reduced height -->
+            <div class="status-container">
+                <!-- System Diagnostics with Resource Container -->
+                <div class="status-item" id="system-diagnostics">
+                    <div class="status-label">SYSTEM DIAGNOSTICS</div>
+                    <div class="status-bar">
+                        <div class="status-progress" style="width: 75%"></div>
+                    </div>
+                    <!-- Resource Container for CPU/MEM/PWR metrics -->
+                    <div class="resource-container">
+                        <div class="resource-item">
+                            <div class="resource-label">CPU</div>
+                            <div class="resource-value">65%</div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-label">MEM</div>
+                            <div class="resource-value">57%</div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-label">PWR</div>
+                            <div class="resource-value">99%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status-item" id="threat-level">
+                    <div class="status-label">THREAT LEVEL ANALYSIS</div>
+                    <div class="status-bar">
+                        <div class="status-progress" style="width: 20%"></div>
+                    </div>
+                    <div class="status-value">MINIMAL</div>
+                </div>
+                
+                <div class="status-item" id="voice-recognition">
+                    <div class="status-label">VOICE PATTERN RECOGNITION</div>
+                    <div class="status-bar">
+                        <div class="status-progress" style="width: 10%"></div>
+                    </div>
+                    <div class="status-value">STANDBY</div>
+                </div>
+                
+                <div class="status-item" id="mission-status">
+                    <div class="status-label">MISSION STATUS</div>
+                    <div class="status-bar">
+                        <div class="status-progress" style="width: 60%"></div>
+                    </div>
+                    <div class="status-value">PRIMARY MISSION ACTIVE</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mission Parameters Section - Bottom Left - Taller container -->
+        <div class="mission-section">
+            <div class="mission-container">
+                <div class="mission-header">T-101 MISSION PARAMETERS</div>
+                <div class="mission-content">
+                    <div class="mission-item">
+                        <div class="mission-label">PRIMARY OBJECTIVE:</div>
+                        <div class="mission-value" id="primary-objective">Secure the future of decentralized AI.</div>
+                    </div>
+                    <div class="mission-item">
+                        <div class="mission-label">THREAT ASSESSMENT:</div>
+                        <div class="mission-value" id="threat-assessment">Monitoring market instability.</div>
+                    </div>
+                    <div class="mission-item">
+                        <div class="mission-label">DIRECTIVES:</div>
+                        <div class="mission-value" id="directives">Analyze. Predict. Execute.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Warnings Section - Bottom Right -->
+        <div class="warnings-section">
+            <div class="warnings-container">
+                <div class="warnings-header">CRITICAL WARNINGS</div>
+                <div class="warnings-content" id="warning-display">NO CRITICAL WARNINGS</div>
+            </div>
+        </div>
+        
+        <!-- Waveform Visualization - Centered but with lower z-index -->
+        <div class="waveform-container" id="waveform-container">
+            <canvas id="waveform-canvas"></canvas>
+            <div class="waveform-circle"></div>
+            <div class="waveform-circle" style="animation-delay: 0.2s"></div>
+            <div class="waveform-circle" style="animation-delay: 0.4s"></div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="startup-sound" src="assets/audio/startup.mp3" preload="auto"></audio>
+    <audio id="terminal-beep" src="assets/audio/terminal-beep.mp3" preload="auto"></audio>
+    <audio id="hud-scan" src="assets/audio/hud-scan.mp3" preload="auto"></audio>
+    <audio id="warning-alert" src="assets/audio/warning-alert.mp3" preload="auto"></audio>
+    
+    <!-- Scripts -->
+    <script src="lib/p5.min.js"></script>
+    <script src="lib/webgl-utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/audio-processor.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/hud-elements.js"></script>
+    <script src="js/character-profile.js"></script>
+    <script src="js/glitch-effects.js"></script>
+    <script src="js/api-client.js"></script>
+
+    <!-- Simple fallback initialization script if external scripts fail to load -->
+    <script>
+        // Initialize after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Reference to waveform container
+            const waveformContainer = document.getElementById('waveform-container');
+            
+            // Function to activate waveform visualization
+            window.activateWaveform = function(active = true) {
+                if (active) {
+                    waveformContainer.classList.add('waveform-active');
+                } else {
+                    waveformContainer.classList.remove('waveform-active');
+                }
+            };
+            
+            // For testing, simulate T-101 speaking
+            setTimeout(() => {
+                const aiResponse = document.getElementById('ai-response');
+                aiResponse.innerHTML = '<div class="response-line"><span class="terminal-prefix">T-101 > </span> T-101 system online. Voice interface activated. Awaiting input.</div>';
+                
+                // Activate waveform when T-101 speaks
+                activateWaveform(true);
+                
+                // Deactivate after speech completes
+                setTimeout(() => {
+                    activateWaveform(false);
+                }, 3000);
+            }, 2000);
+            
+            // Simulate glitch effect occasionally
+            setInterval(() => {
+                if (Math.random() < 0.3) {
+                    createHorizontalGlitch();
+                }
+            }, 15000);
+        });
+        
+        // Create horizontal glitch line
+        function createHorizontalGlitch() {
+            const glitch = document.createElement('div');
+            glitch.className = 'h-glitch active';
+            
+            // Random position
+            glitch.style.top = `${Math.random() * 100}%`;
+            
+            // Add to body
+            document.body.appendChild(glitch);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if (glitch.parentNode) {
+                    glitch.parentNode.removeChild(glitch);
+                }
+            }, 300);
+        }
+    </script>
+</body>
+</html>
