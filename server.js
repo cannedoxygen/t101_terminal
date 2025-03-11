@@ -54,7 +54,7 @@ function logRequest(req, message) {
     console.log(`[${new Date().toISOString()}] ${message}`, {
         method: req.method,
         path: req.path,
-        body: req.body
+        body: req.body ? (typeof req.body === 'object' ? '(object)' : req.body.substring(0, 100)) : '(no body)'
     });
 }
 
@@ -158,7 +158,7 @@ app.post('/api/tts', async (req, res) => {
     try {
         const { 
             text, 
-            voiceId = '2EiwWnXFnvU5JabPnv8n', // Clyde voice
+            voiceId = 'pNInz6obpgDQGcFmaJgB', // Default to deep male voice
             modelId = 'eleven_monolingual_v1',
             stability = 0.5,
             similarityBoost = 0.75
@@ -243,6 +243,74 @@ app.post('/api/tts', async (req, res) => {
     }
 });
 
+// OpenAI Chat endpoint
+app.post('/api/chat', async (req, res) => {
+    logRequest(req, 'Chat Request Received');
+
+    if (!OPENAI_API_KEY) {
+        return res.status(500).json({ 
+            error: 'OpenAI API key not configured',
+            details: 'No API key found in environment variables'
+        });
+    }
+
+    try {
+        const { message, systemPrompt } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ 
+                error: 'Message is required', 
+                details: 'No message provided for the AI to respond to' 
+            });
+        }
+
+        // Default system prompt if not provided
+        const defaultSystemPrompt = 
+            "You are T-101, a cybernetic AI assistant with a mission to secure the future of decentralized AI. " +
+            "Respond in a terse, somewhat mechanical way, like a futuristic AI in a cyberpunk setting. " +
+            "Keep responses relatively short and direct. Your primary objective is to analyze, predict, and execute. " +
+            "Your directives are to secure decentralized AI futures. You monitor for market instability. " +
+            "You should occasionally reference system diagnostics, threat levels, or security protocols in your responses.";
+
+        // Send request to OpenAI
+        const response = await axios({
+            method: 'POST',
+            url: 'https://api.openai.com/v1/chat/completions',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            data: {
+                model: "gpt-3.5-turbo", // or gpt-4 if available
+                messages: [
+                    {
+                        role: "system", 
+                        content: systemPrompt || defaultSystemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: message
+                    }
+                ],
+                max_tokens: 200,
+                temperature: 0.7
+            }
+        });
+
+        res.json({ 
+            success: true,
+            response: response.data.choices[0].message.content
+        });
+    } catch (error) {
+        console.error('OpenAI API Error:', error.response?.data || error.message);
+        
+        res.status(500).json({
+            error: 'AI Processing Error',
+            details: error.message
+        });
+    }
+});
+
 // OpenAI Whisper Transcription endpoint
 app.post('/api/transcribe', upload.single('file'), async (req, res) => {
     logRequest(req, 'Transcription Request Received');
@@ -317,6 +385,102 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
     }
 });
 
+// API endpoint for audio recording and transcription in one step
+app.post('/api/process-audio', upload.single('audio'), async (req, res) => {
+    logRequest(req, 'Audio Processing Request');
+
+    if (!OPENAI_API_KEY) {
+        return res.status(500).json({ 
+            error: 'OpenAI API key not configured',
+            details: 'No API key found in environment variables'
+        });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ 
+            error: 'No audio uploaded',
+            details: 'Audio file is required' 
+        });
+    }
+
+    try {
+        // First transcribe the audio using Whisper
+        const formData = new FormData();
+        
+        // Create a buffer stream from the file buffer
+        const bufferStream = new Readable();
+        bufferStream.push(req.file.buffer);
+        bufferStream.push(null);
+
+        // Append file and parameters
+        formData.append('file', bufferStream, {
+            filename: 'recording.webm',
+            contentType: req.file.mimetype || 'audio/webm'
+        });
+        formData.append('model', 'whisper-1');
+        formData.append('language', 'en');
+
+        // Make request to OpenAI API
+        const transcriptionResponse = await axios({
+            method: 'POST',
+            url: 'https://api.openai.com/v1/audio/transcriptions',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                ...formData.getHeaders()
+            },
+            data: formData
+        });
+
+        const transcription = transcriptionResponse.data.text;
+
+        // Now send the transcription to the chat API for a response
+        const defaultSystemPrompt = 
+            "You are T-101, a cybernetic AI assistant with a mission to secure the future of decentralized AI. " +
+            "Respond in a terse, somewhat mechanical way, like a futuristic AI in a cyberpunk setting. " +
+            "Keep responses relatively short and direct. Your primary objective is to analyze, predict, and execute. " +
+            "Your directives are to secure decentralized AI futures. You monitor for market instability. " +
+            "You should occasionally reference system diagnostics, threat levels, or security protocols in your responses.";
+
+        const chatResponse = await axios({
+            method: 'POST',
+            url: 'https://api.openai.com/v1/chat/completions',
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            data: {
+                model: "gpt-3.5-turbo",
+                messages: [
+                    {
+                        role: "system", 
+                        content: defaultSystemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: transcription
+                    }
+                ],
+                max_tokens: 200,
+                temperature: 0.7
+            }
+        });
+
+        // Return both transcription and AI response
+        res.json({
+            success: true,
+            transcription: transcription,
+            response: chatResponse.data.choices[0].message.content
+        });
+    } catch (error) {
+        console.error('Audio processing error:', error.response?.data || error.message);
+        
+        res.status(500).json({
+            error: 'Audio Processing Error',
+            details: error.message
+        });
+    }
+});
+
 // Fallback route to serve index.html for all unmatched routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
@@ -333,8 +497,8 @@ function startServer() {
 ╔═══════════════════════════════════════════════╗
 ║    T-101 AI Voice Terminal Server Started    ║
 ╠═══════════════════════════════════════════════╣
-║ Port:     ${PORT}                            ║
-║ ENV:      ${process.env.NODE_ENV || 'development'}                    ║
+║ Port:     ${PORT.toString().padEnd(10)}                     ║
+║ ENV:      ${(process.env.NODE_ENV || 'development').padEnd(20)}            ║
 ║ ElevenLabs: ${ELEVEN_LABS_API_KEY ? '✓ Configured' : '✗ Not Configured'}       ║
 ║ OpenAI:     ${OPENAI_API_KEY ? '✓ Configured' : '✗ Not Configured'}       ║
 ╚═══════════════════════════════════════════════╝
@@ -349,11 +513,17 @@ function startServer() {
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
+    
+    // Perform cleanup if needed
+    
+    // Exit with error code
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    
+    // No need to exit here, just log the error
 });
 
 // Start the server

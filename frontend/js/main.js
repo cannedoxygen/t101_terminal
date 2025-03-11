@@ -79,6 +79,7 @@ function createStartupSequence() {
     // Try to play startup sound (may be blocked by browser)
     try {
         if (audio.startup) {
+            audio.startup.volume = 0.5; // Lower volume
             const playPromise = audio.startup.play();
             
             // Handle promise to avoid uncaught errors
@@ -127,9 +128,15 @@ function completeInitialization() {
     STATE.initialized = true;
     
     // Initialize components
+    initializeVoiceIntegration();
     initializeStatusBars();
-    initializeCharacterProfile();
     setupEventListeners();
+    
+    // Initialize character profile if available
+    if (window.characterProfile && 
+        typeof window.characterProfile.initializeCharacterProfile === 'function') {
+        window.characterProfile.initializeCharacterProfile();
+    }
     
     // Display initial T-101 message
     setTimeout(() => {
@@ -140,14 +147,193 @@ function completeInitialization() {
             elements.speechDisplay.appendChild(responseElement);
         }
         
+        // Speak initial message with TTS if available
+        if (window.apiClient && typeof window.apiClient.speakText === 'function') {
+            window.apiClient.speakText("T-101 system online. Voice interface activated. Awaiting input.")
+                .catch(error => {
+                    console.error('Initial TTS error:', error);
+                });
+        }
+        
         // Add a randomized system warning after a delay
         setTimeout(() => {
-            addWarning("Potential security threat detected. Firewall reinforced.");
+            addRandomWarning();
         }, 5000);
     }, 1000);
 }
 
 /**
+ * Initialize voice integration with API client
+ */
+function initializeVoiceIntegration() {
+    console.log('Initializing voice integration...');
+    
+    // Initialize API client
+    if (window.apiClient && typeof window.apiClient.initializeApiClient === 'function') {
+        window.apiClient.initializeApiClient();
+    } else {
+        console.warn('API client not available for voice integration');
+    }
+    
+    // Set up microphone button
+    const micButton = document.getElementById('mic-toggle');
+    if (micButton) {
+        micButton.addEventListener('click', () => {
+            if (window.apiClient && typeof window.apiClient.processVoiceInput === 'function') {
+                window.apiClient.processVoiceInput()
+                    .then(text => {
+                        console.log('Voice input processed:', text);
+                    })
+                    .catch(error => {
+                        console.error('Voice input error:', error);
+                    });
+            } else {
+                console.error('No voice processing functionality available');
+                if (window.terminalInterface && 
+                    typeof window.terminalInterface.addSystemMessage === 'function') {
+                    window.terminalInterface.addSystemMessage('Voice processing not available', 'error');
+                }
+            }
+        });
+    }
+}
+
+/**
+ * Initialize status bars and values
+ */
+function initializeStatusBars() {
+    // Update status bars based on initial state
+    updateStatusBars();
+    
+    // Set up periodic updates
+    setInterval(() => {
+        // Add small random fluctuations
+        STATE.systemDiagnostics += (Math.random() * 2 - 1) * 2;
+        STATE.systemDiagnostics = Math.max(0, Math.min(100, STATE.systemDiagnostics));
+        
+        STATE.voiceRecognition += (Math.random() * 2 - 1) * 3;
+        STATE.voiceRecognition = Math.max(0, Math.min(100, STATE.voiceRecognition));
+        
+        STATE.missionStatus += (Math.random() * 2 - 1) * 1;
+        STATE.missionStatus = Math.max(0, Math.min(100, STATE.missionStatus));
+        
+        // Update the display
+        updateStatusBars();
+    }, 5000);
+}
+
+/**
+ * Update status bars and values based on current STATE
+ */
+function updateStatusBars() {
+    // Update system diagnostics
+    if (elements.statusBars.systemDiagnostics) {
+        elements.statusBars.systemDiagnostics.style.width = `${STATE.systemDiagnostics}%`;
+    }
+    
+    // Update threat level
+    if (elements.statusBars.threatLevel) {
+        elements.statusBars.threatLevel.style.width = `${STATE.threatLevel}%`;
+    }
+    
+    // Update voice recognition
+    if (elements.statusBars.voiceRecognition) {
+        elements.statusBars.voiceRecognition.style.width = `${STATE.voiceRecognition}%`;
+    }
+    
+    // Update mission status
+    if (elements.statusBars.missionStatus) {
+        elements.statusBars.missionStatus.style.width = `${STATE.missionStatus}%`;
+    }
+    
+    // Update status values
+    updateStatusValues();
+}
+
+/**
+ * Update status value text
+ */
+function updateStatusValues() {
+    // Update system diagnostics status
+    if (elements.statusValues.systemDiagnostics) {
+        const systemStatusText = STATE.systemDiagnostics > 90 ? 'OPTIMAL' :
+            STATE.systemDiagnostics > 70 ? 'OPERATIONAL' :
+            STATE.systemDiagnostics > 40 ? 'DEGRADED' : 'CRITICAL';
+        elements.statusValues.systemDiagnostics.textContent = systemStatusText;
+    }
+    
+    // Update threat level status
+    if (elements.statusValues.threatLevel) {
+        const threatText = STATE.threatLevel < 20 ? 'MINIMAL' :
+                         STATE.threatLevel < 40 ? 'GUARDED' :
+                         STATE.threatLevel < 60 ? 'ELEVATED' :
+                         STATE.threatLevel < 80 ? 'HIGH' : 'SEVERE';
+        elements.statusValues.threatLevel.textContent = threatText;
+    }
+    
+    // Update voice recognition status
+    if (elements.statusValues.voiceRecognition) {
+        const voiceText = STATE.voiceRecognition < 20 ? 'STANDBY' :
+                        STATE.voiceRecognition < 40 ? 'LISTENING' :
+                        STATE.voiceRecognition < 60 ? 'PROCESSING' :
+                        STATE.voiceRecognition < 80 ? 'ANALYZING' : 'ACTIVE';
+        elements.statusValues.voiceRecognition.textContent = voiceText;
+    }
+    
+    // Update mission status
+    if (elements.statusValues.missionStatus) {
+        const missionText = STATE.missionStatus < 20 ? 'INITIALIZING' :
+                          STATE.missionStatus < 40 ? 'GATHERING DATA' :
+                          STATE.missionStatus < 60 ? 'PRIMARY MISSION ACTIVE' :
+                          STATE.missionStatus < 80 ? 'ADVANCED OPERATION' : 'FINAL PHASE';
+        elements.statusValues.missionStatus.textContent = missionText;
+    }
+}
+
+/**
+ * Setup additional event listeners
+ */
+function setupEventListeners() {
+    // Add click event for waveform toggle (for testing)
+    const waveformContainer = document.getElementById('waveform-container');
+    if (waveformContainer) {
+        waveformContainer.addEventListener('click', () => {
+            if (window.animationController && 
+                typeof window.animationController.setWaveformActive === 'function') {
+                const isActive = waveformContainer.classList.contains('waveform-active');
+                window.animationController.setWaveformActive(!isActive);
+            }
+        });
+    }
+    
+    // Add click handler for warning area to generate random warnings
+    const warningDisplay = document.getElementById('warning-display');
+    if (warningDisplay) {
+        warningDisplay.addEventListener('click', () => {
+            addRandomWarning();
+        });
+    }
+}
+
+/**
+ * Process user input - Enhanced with TTS integration
+ * @param {string} text - User input text
+ */
+function processUserInput(text) {
+    console.log('Processing user input:', text);
+    
+    // Prevent processing if already awaiting a response
+    if (STATE.awaitingResponse) {
+        console.log('Awaiting previous response. Ignoring new input.');
+        return;
+    }
+    
+    // Add user command to terminal display
+    if (window.terminalInterface && typeof window.terminalInterface.addUserCommand === 'function') {
+        window.terminalInterface.addUserCommand(text);
+    }
+    
+    /**
  * Process user input 
  * @param {string} text - User input text
  */
@@ -179,30 +365,56 @@ function processUserInput(text) {
         }
     }
     
-    // Simulate AI processing time
-    setTimeout(() => {
-        // Generate AI response
-        const response = generateAIResponse(text);
-        
-        // Display the response
-        displayAIResponse(response);
+    // Show loading indicator
+    if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+        window.terminalInterface.addSystemMessage("Processing input...", 'default');
+    }
+    
+    // Send to OpenAI API
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: text })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.response) {
+            // Display the AI response
+            displayAIResponse(data.response);
+            
+            // Speak the response if speech available
+            if (window.audioProcessor && typeof window.audioProcessor.speakText === 'function') {
+                window.audioProcessor.speakText(data.response)
+                    .catch(error => {
+                        console.error('Speech synthesis error:', error);
+                    });
+            }
+        } else {
+            // Handle error
+            if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+                window.terminalInterface.addSystemMessage(`Error: ${data.error || 'Failed to get response from T-101'}`, 'error');
+            }
+            
+            // Fall back to local response
+            const fallbackResponse = generateAIResponse(text);
+            displayAIResponse(fallbackResponse);
+        }
         
         // Reset awaiting state
         STATE.awaitingResponse = false;
+    })
+    .catch(error => {
+        console.error('Error communicating with AI:', error);
         
-        // Attempt to speak the response if audio services are available
-        if (window.audioProcessor && typeof window.audioProcessor.speakText === 'function') {
-            window.audioProcessor.speakText(response)
-                .catch(error => {
-                    console.error('Speech synthesis error:', error);
-                });
-        } else if (window.apiClient && typeof window.apiClient.speakText === 'function') {
-            window.apiClient.speakText(response)
-                .catch(error => {
-                    console.error('Speech synthesis error:', error);
-                });
-        }
-    }, 800 + Math.random() * 700);
+        // Fall back to local response
+        const fallbackResponse = generateAIResponse(text);
+        displayAIResponse(fallbackResponse);
+        
+        // Reset awaiting state
+        STATE.awaitingResponse = false;
+    });
 }
 
 /**
@@ -291,7 +503,7 @@ function generateAIResponse(userText) {
 }
 
 /**
- * Display AI response with typing effect
+ * Display AI response with improved waveform integration
  * @param {string} text - AI response text
  */
 function displayAIResponse(text) {
@@ -330,14 +542,8 @@ function displayAIResponse(text) {
         elements.speechDisplay.scrollTop = elements.speechDisplay.scrollHeight;
     }
     
-    // Reset speaking state 
-    STATE.speaking = false;
-    
-    // Deactivate waveform
-    if (window.animationController && 
-        typeof window.animationController.setWaveformActive === 'function') {
-        window.animationController.setWaveformActive(false);
-    }
+    // NOTE: We don't deactivate the waveform or set speaking=false here
+    // The TTS function will handle that when speech completes
 }
 
 /**
@@ -463,213 +669,178 @@ function updateSystemDiagnostics(newLevel) {
 }
 
 /**
- * Update status value text
+ * Init wave motion animation for speech
  */
-function updateStatusValues() {
-    // Update system diagnostics status
-    if (elements.statusValues.systemDiagnostics) {
-        const systemStatusText = STATE.systemDiagnostics > 90 ? 'OPTIMAL' :
-            STATE.systemDiagnostics > 70 ? 'OPERATIONAL' :
-            STATE.systemDiagnostics > 40 ? 'DEGRADED' : 'CRITICAL';
-        elements.statusValues.systemDiagnostics.textContent = systemStatusText;
-    }
-    
-    // Update threat level status
-    if (elements.statusValues.threatLevel) {
-        const threatText = STATE.threatLevel < 20 ? 'MINIMAL' :
-            STATE.threatLevel < 40 ? 'GUARDED' :
-            STATE.threatLevel < 60 ? 'ELEVATED' :
-            STATE.threatLevel < 80 ? 'HIGH' : 'SEVERE';
-        elements.statusValues.threatLevel.textContent = threatText;
-    }
-    
-    // Update voice recognition status
-    if (elements.statusValues.voiceRecognition) {
-        const voiceRecText = STATE.voiceRecognition < 10 ? 'STANDBY' :
-            STATE.voiceRecognition < 40 ? 'LEARNING' :
-            STATE.voiceRecognition < 70 ? 'ANALYZING' : 'RECOGNIZED';
-        elements.statusValues.voiceRecognition.textContent = voiceRecText;
-    }
-    
-    // Update mission status
-    if (elements.statusValues.missionStatus) {
-        const missionText = STATE.missionStatus < 20 ? 'INITIATING' :
-            STATE.missionStatus < 40 ? 'GATHERING DATA' :
-            STATE.missionStatus < 60 ? 'CALCULATING STRATEGY' :
-            STATE.missionStatus < 80 ? 'EXECUTING' : 'NEAR COMPLETION';
-        elements.statusValues.missionStatus.textContent = missionText;
-    }
-}
-
-/**
- * Initialize status bars
- */
-function initializeStatusBars() {
-    // Initialize system diagnostics
-    updateSystemDiagnostics(STATE.systemDiagnostics);
-    
-    // Initialize threat level
-    updateThreatLevel(STATE.threatLevel);
-    
-    // Initialize voice recognition
-    if (elements.statusBars.voiceRecognition) {
-        elements.statusBars.voiceRecognition.style.width = `${STATE.voiceRecognition}%`;
-    }
-    
-    // Initialize mission status
-    if (elements.statusBars.missionStatus) {
-        elements.statusBars.missionStatus.style.width = `${STATE.missionStatus}%`;
-    }
-    
-    // Update status text values
-    updateStatusValues();
-}
-
-/**
- * Setup event listeners
- */
-function setupEventListeners() {
-    // Mic toggle button
-    if (elements.micToggle) {
-        elements.micToggle.addEventListener('click', () => {
-            // Toggle speech recognition if available
-            if (window.audioProcessor && typeof window.audioProcessor.toggleSpeechRecognition === 'function') {
-                window.audioProcessor.toggleSpeechRecognition();
-            } else if (window.apiClient && typeof window.apiClient.processVoiceInput === 'function') {
-                window.apiClient.processVoiceInput(5000); // 5 second recording
-            } else {
-                console.error('No speech recognition available');
+function initWaveAnimation() {
+    // Set up animation if p5.js is available
+    if (typeof p5 !== 'undefined') {
+        const waveformCanvas = document.getElementById('waveform-canvas');
+        if (!waveformCanvas) return;
+        
+        const sketch = (p) => {
+            let active = false;
+            let amplitude = 50;
+            let frequency = 2;
+            
+            p.setup = function() {
+                p.createCanvas(waveformCanvas.offsetWidth, waveformCanvas.offsetHeight);
+            };
+            
+            p.draw = function() {
+                p.clear();
                 
-                // Display error message
-                if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
-                    window.terminalInterface.addSystemMessage(
-                        'Speech recognition unavailable. Please type your input.',
-                        'error'
-                    );
+                if (active) {
+                    drawActiveWaveform(p);
+                } else {
+                    drawIdleWaveform(p);
                 }
-            }
-        });
-    }
-    
-    // User input field
-    if (elements.userInput) {
-        elements.userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+            };
+            
+            function drawActiveWaveform(p) {
+                const centerX = p.width / 2;
+                const centerY = p.height / 2;
                 
-                // Get input text
-                const text = elements.userInput.textContent.trim();
+                // Calculate radius and number of points
+                const maxRadius = Math.min(centerX, centerY) * 0.9;
+                const numPoints = 180;
+                const angleStep = (Math.PI * 2) / numPoints;
                 
-                if (text) {
-                    // Process user input
-                    processUserInput(text);
+                // Draw multiple rings with different phases
+                for (let ring = 1; ring <= 3; ring++) {
+                    const ringRadius = maxRadius * (ring / 4);
+                    const ringAmplitude = amplitude * (ring / 3);
+                    const ringFrequency = frequency * (4 - ring) / 2;
+                    const timeOffset = p.millis() / 1000 * ringFrequency;
                     
-                    // Clear input field
-                    elements.userInput.textContent = '';
+                    // Set style based on ring
+                    p.stroke(255, 42, 42, ring === 1 ? 204 : ring === 2 ? 153 : 102);
+                    p.strokeWeight(4 - ring + 1);
+                    p.noFill();
+                    
+                    // Begin shape
+                    p.beginShape();
+                    
+                    // Draw points around circle
+                    for (let i = 0; i <= numPoints; i++) {
+                        const angle = i * angleStep;
+                        
+                        // Calculate wave effect
+                        const waveEffect = Math.sin(angle * 8 + timeOffset) * ringAmplitude;
+                        
+                        // Calculate point position
+                        const x = centerX + Math.cos(angle) * (ringRadius + waveEffect);
+                        const y = centerY + Math.sin(angle) * (ringRadius + waveEffect);
+                        
+                        p.vertex(x, y);
+                    }
+                    
+                    // End shape
+                    p.endShape(p.CLOSE);
                 }
-            }
-        });
-    }
-    
-    // Periodically update HUD values for effect
-    setInterval(() => {
-        // Slightly fluctuate system diagnostics
-        const fluctuation = Math.random() * 5 - 2.5; // -2.5 to +2.5
-        updateSystemDiagnostics(Math.min(100, Math.max(0, STATE.systemDiagnostics + fluctuation)));
-        
-        // Occasionally update other metrics
-        if (Math.random() < 0.2) {
-            // Voice recognition - slowly increase
-            STATE.voiceRecognition = Math.min(100, STATE.voiceRecognition + Math.random() * 2);
-            if (elements.statusBars.voiceRecognition) {
-                elements.statusBars.voiceRecognition.style.width = `${STATE.voiceRecognition}%`;
+                
+                // Draw center pulse
+                const pulseSize = 10 + Math.sin(p.millis() / 200) * 5;
+                
+                p.fill(255, 42, 42, 204);
+                p.noStroke();
+                p.ellipse(centerX, centerY, pulseSize * 2);
             }
             
-            // Mission status - slowly increase
-            STATE.missionStatus = Math.min(100, STATE.missionStatus + Math.random() * 0.5);
-            if (elements.statusBars.missionStatus) {
-                elements.statusBars.missionStatus.style.width = `${STATE.missionStatus}%`;
+            function drawIdleWaveform(p) {
+                const centerX = p.width / 2;
+                const centerY = p.height / 2;
+                
+                // Draw subtle idle circles
+                const radius = 30 + Math.sin(p.millis() / 1000) * 5;
+                
+                p.stroke(255, 42, 42, 51);
+                p.strokeWeight(1);
+                p.noFill();
+                
+                p.ellipse(centerX, centerY, radius * 2);
+                p.ellipse(centerX, centerY, radius * 4);
             }
             
-            // Update status text values
-            updateStatusValues();
-        }
+            // Method to set waveform active state
+            p.setWaveformActive = function(isActive, amp, freq) {
+                active = isActive;
+                
+                if (isActive) {
+                    amplitude = amp || 50;
+                    frequency = freq || 2;
+                    
+                    // Add class to container
+                    const container = document.getElementById('waveform-container');
+                    if (container) {
+                        container.classList.add('waveform-active');
+                    }
+                } else {
+                    // Remove class from container
+                    const container = document.getElementById('waveform-container');
+                    if (container) {
+                        container.classList.remove('waveform-active');
+                    }
+                }
+            };
+        };
         
-        // Occasionally add a random glitch effect
-        if (Math.random() < 0.1) {
-            if (window.animationController && typeof window.animationController.createHorizontalGlitch === 'function') {
-                window.animationController.createHorizontalGlitch();
+        // Create p5 instance
+        const p5Instance = new p5(sketch);
+        
+        // Expose waveform control to global scope
+        window.animationController = window.animationController || {};
+        window.animationController.setWaveformActive = (active, amplitude, frequency) => {
+            if (p5Instance && typeof p5Instance.setWaveformActive === 'function') {
+                p5Instance.setWaveformActive(active, amplitude, frequency);
             }
-        }
-    }, 5000);
+        };
+        
+        // Add screen glitch method
+        window.animationController.createScreenGlitch = () => {
+            // Add screen glitch effect
+            const terminal = document.querySelector('.terminal-interface');
+            if (terminal) {
+                terminal.classList.add('glitch-effect');
+                setTimeout(() => {
+                    terminal.classList.remove('glitch-effect');
+                }, 500);
+            }
+        };
+        
+        // Add voice waves visualization
+        window.animationController.createVoiceWaves = (container) => {
+            if (!container) return null;
+            
+            // Remove existing voice wave container
+            const existingContainer = container.querySelector('.voice-wave-container');
+            if (existingContainer) {
+                existingContainer.remove();
+            }
+            
+            // Create new container
+            const waveContainer = document.createElement('div');
+            waveContainer.className = 'voice-wave-container';
+            
+            // Add wave elements
+            for (let i = 0; i < 5; i++) {
+                const wave = document.createElement('div');
+                wave.className = 'voice-wave';
+                waveContainer.appendChild(wave);
+            }
+            
+            // Add to container
+            container.appendChild(waveContainer);
+            
+            return waveContainer;
+        };
+    }
 }
 
-/**
- * Initialize character profile
- */
-function initializeCharacterProfile() {
-    // If character profile initialization is available, use it
-    if (window.characterProfile && 
-        typeof window.characterProfile.initializeCharacterProfile === 'function') {
-        window.characterProfile.initializeCharacterProfile();
-        return;
-    }
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize terminal
+    initializeTerminal();
     
-    // Otherwise do a manual initialization
-    // Get elements
-    const profileElements = {
-        primaryObjective: document.getElementById('primary-objective'),
-        threatAssessment: document.getElementById('threat-assessment'),
-        directives: document.getElementById('directives')
-    };
-    
-    // Default profile data
-    const profileData = {
-        primaryObjective: "Secure the future of decentralized AI.",
-        threatAssessment: "Monitoring market instability.",
-        directives: "Analyze. Predict. Execute."
-    };
-    
-    // Type text function for animated text effect
-    function typeText(element, text, speed = 50) {
-        if (!element) return;
-        
-        element.textContent = '';
-        let i = 0;
-        
-        function type() {
-            if (i < text.length) {
-                element.textContent += text.charAt(i);
-                i++;
-                setTimeout(type, speed);
-            }
-        }
-        
-        type();
-    }
-    
-    // Animate text with delays
-    setTimeout(() => {
-        if (profileElements.primaryObjective) {
-            typeText(profileElements.primaryObjective, profileData.primaryObjective);
-        }
-    }, 1000);
-    
-    setTimeout(() => {
-        if (profileElements.threatAssessment) {
-            typeText(profileElements.threatAssessment, profileData.threatAssessment);
-        }
-    }, 3000);
-    
-    setTimeout(() => {
-        if (profileElements.directives) {
-            typeText(profileElements.directives, profileData.directives);
-        }
-    }, 5000);
-}
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initializeTerminal);
-
-// Expose STATE to window for debugging
-window.STATE = STATE;
+    // Initialize wave animation
+    initWaveAnimation();
+});
