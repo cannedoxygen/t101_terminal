@@ -14,7 +14,7 @@ const apiState = {
     openAiEndpoint: 'https://api.openai.com/v1',
     
     // Voice settings
-    voiceId: 'pNInz6obpgDQGcFmaJgB', // Default to a deep, masculine voice
+    voiceId: '2EiwWnXFnvU5JabPnv8n', // Default to a deep, masculine voice
     modelId: 'eleven_monolingual_v1',
     stability: 0.75,
     similarityBoost: 0.8,

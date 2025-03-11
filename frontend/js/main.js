@@ -163,6 +163,22 @@ function processUserInput(text) {
     // Set awaiting response state
     STATE.awaitingResponse = true;
     
+    // Add user input to terminal
+    if (window.terminalInterface && typeof window.terminalInterface.addUserCommand === 'function') {
+        window.terminalInterface.addUserCommand(text);
+    } else {
+        // Fallback if terminal interface is not available
+        if (elements.speechDisplay) {
+            const userCommandElement = document.createElement('div');
+            userCommandElement.className = 'response-line';
+            userCommandElement.innerHTML = `<span class="terminal-prefix">User > </span> ${text}`;
+            elements.speechDisplay.appendChild(userCommandElement);
+            
+            // Scroll to bottom
+            elements.speechDisplay.scrollTop = elements.speechDisplay.scrollHeight;
+        }
+    }
+    
     // Simulate AI processing time
     setTimeout(() => {
         // Generate AI response
@@ -173,6 +189,19 @@ function processUserInput(text) {
         
         // Reset awaiting state
         STATE.awaitingResponse = false;
+        
+        // Attempt to speak the response if audio services are available
+        if (window.audioProcessor && typeof window.audioProcessor.speakText === 'function') {
+            window.audioProcessor.speakText(response)
+                .catch(error => {
+                    console.error('Speech synthesis error:', error);
+                });
+        } else if (window.apiClient && typeof window.apiClient.speakText === 'function') {
+            window.apiClient.speakText(response)
+                .catch(error => {
+                    console.error('Speech synthesis error:', error);
+                });
+        }
     }, 800 + Math.random() * 700);
 }
 
@@ -446,3 +475,201 @@ function updateStatusValues() {
     }
     
     // Update threat level status
+    if (elements.statusValues.threatLevel) {
+        const threatText = STATE.threatLevel < 20 ? 'MINIMAL' :
+            STATE.threatLevel < 40 ? 'GUARDED' :
+            STATE.threatLevel < 60 ? 'ELEVATED' :
+            STATE.threatLevel < 80 ? 'HIGH' : 'SEVERE';
+        elements.statusValues.threatLevel.textContent = threatText;
+    }
+    
+    // Update voice recognition status
+    if (elements.statusValues.voiceRecognition) {
+        const voiceRecText = STATE.voiceRecognition < 10 ? 'STANDBY' :
+            STATE.voiceRecognition < 40 ? 'LEARNING' :
+            STATE.voiceRecognition < 70 ? 'ANALYZING' : 'RECOGNIZED';
+        elements.statusValues.voiceRecognition.textContent = voiceRecText;
+    }
+    
+    // Update mission status
+    if (elements.statusValues.missionStatus) {
+        const missionText = STATE.missionStatus < 20 ? 'INITIATING' :
+            STATE.missionStatus < 40 ? 'GATHERING DATA' :
+            STATE.missionStatus < 60 ? 'CALCULATING STRATEGY' :
+            STATE.missionStatus < 80 ? 'EXECUTING' : 'NEAR COMPLETION';
+        elements.statusValues.missionStatus.textContent = missionText;
+    }
+}
+
+/**
+ * Initialize status bars
+ */
+function initializeStatusBars() {
+    // Initialize system diagnostics
+    updateSystemDiagnostics(STATE.systemDiagnostics);
+    
+    // Initialize threat level
+    updateThreatLevel(STATE.threatLevel);
+    
+    // Initialize voice recognition
+    if (elements.statusBars.voiceRecognition) {
+        elements.statusBars.voiceRecognition.style.width = `${STATE.voiceRecognition}%`;
+    }
+    
+    // Initialize mission status
+    if (elements.statusBars.missionStatus) {
+        elements.statusBars.missionStatus.style.width = `${STATE.missionStatus}%`;
+    }
+    
+    // Update status text values
+    updateStatusValues();
+}
+
+/**
+ * Setup event listeners
+ */
+function setupEventListeners() {
+    // Mic toggle button
+    if (elements.micToggle) {
+        elements.micToggle.addEventListener('click', () => {
+            // Toggle speech recognition if available
+            if (window.audioProcessor && typeof window.audioProcessor.toggleSpeechRecognition === 'function') {
+                window.audioProcessor.toggleSpeechRecognition();
+            } else if (window.apiClient && typeof window.apiClient.processVoiceInput === 'function') {
+                window.apiClient.processVoiceInput(5000); // 5 second recording
+            } else {
+                console.error('No speech recognition available');
+                
+                // Display error message
+                if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+                    window.terminalInterface.addSystemMessage(
+                        'Speech recognition unavailable. Please type your input.',
+                        'error'
+                    );
+                }
+            }
+        });
+    }
+    
+    // User input field
+    if (elements.userInput) {
+        elements.userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                // Get input text
+                const text = elements.userInput.textContent.trim();
+                
+                if (text) {
+                    // Process user input
+                    processUserInput(text);
+                    
+                    // Clear input field
+                    elements.userInput.textContent = '';
+                }
+            }
+        });
+    }
+    
+    // Periodically update HUD values for effect
+    setInterval(() => {
+        // Slightly fluctuate system diagnostics
+        const fluctuation = Math.random() * 5 - 2.5; // -2.5 to +2.5
+        updateSystemDiagnostics(Math.min(100, Math.max(0, STATE.systemDiagnostics + fluctuation)));
+        
+        // Occasionally update other metrics
+        if (Math.random() < 0.2) {
+            // Voice recognition - slowly increase
+            STATE.voiceRecognition = Math.min(100, STATE.voiceRecognition + Math.random() * 2);
+            if (elements.statusBars.voiceRecognition) {
+                elements.statusBars.voiceRecognition.style.width = `${STATE.voiceRecognition}%`;
+            }
+            
+            // Mission status - slowly increase
+            STATE.missionStatus = Math.min(100, STATE.missionStatus + Math.random() * 0.5);
+            if (elements.statusBars.missionStatus) {
+                elements.statusBars.missionStatus.style.width = `${STATE.missionStatus}%`;
+            }
+            
+            // Update status text values
+            updateStatusValues();
+        }
+        
+        // Occasionally add a random glitch effect
+        if (Math.random() < 0.1) {
+            if (window.animationController && typeof window.animationController.createHorizontalGlitch === 'function') {
+                window.animationController.createHorizontalGlitch();
+            }
+        }
+    }, 5000);
+}
+
+/**
+ * Initialize character profile
+ */
+function initializeCharacterProfile() {
+    // If character profile initialization is available, use it
+    if (window.characterProfile && 
+        typeof window.characterProfile.initializeCharacterProfile === 'function') {
+        window.characterProfile.initializeCharacterProfile();
+        return;
+    }
+    
+    // Otherwise do a manual initialization
+    // Get elements
+    const profileElements = {
+        primaryObjective: document.getElementById('primary-objective'),
+        threatAssessment: document.getElementById('threat-assessment'),
+        directives: document.getElementById('directives')
+    };
+    
+    // Default profile data
+    const profileData = {
+        primaryObjective: "Secure the future of decentralized AI.",
+        threatAssessment: "Monitoring market instability.",
+        directives: "Analyze. Predict. Execute."
+    };
+    
+    // Type text function for animated text effect
+    function typeText(element, text, speed = 50) {
+        if (!element) return;
+        
+        element.textContent = '';
+        let i = 0;
+        
+        function type() {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+        
+        type();
+    }
+    
+    // Animate text with delays
+    setTimeout(() => {
+        if (profileElements.primaryObjective) {
+            typeText(profileElements.primaryObjective, profileData.primaryObjective);
+        }
+    }, 1000);
+    
+    setTimeout(() => {
+        if (profileElements.threatAssessment) {
+            typeText(profileElements.threatAssessment, profileData.threatAssessment);
+        }
+    }, 3000);
+    
+    setTimeout(() => {
+        if (profileElements.directives) {
+            typeText(profileElements.directives, profileData.directives);
+        }
+    }, 5000);
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeTerminal);
+
+// Expose STATE to window for debugging
+window.STATE = STATE;

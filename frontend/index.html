@@ -348,6 +348,10 @@
         </div>
     </div>
 
+    <!-- Audio Elements -->
+    <audio id="startup-sound" src="assets/audio/startup.mp3" preload="auto"></audio>
+    <audio id="terminal-beep" src="assets/audio/terminal-beep.mp3" preload="auto"></audio>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const accessBtn = document.getElementById('access-btn');
@@ -373,7 +377,7 @@
             accessBtn.addEventListener('click', function() {
                 // If button says "Continue Anyway", just redirect
                 if (accessBtn.textContent === 'Continue Anyway') {
-                    window.location.href = '/terminal.html'; // Change this to your main app URL
+                    window.location.href = 'terminal.html';
                     return;
                 }
                 
@@ -405,8 +409,9 @@
                                         // Audio playback started successfully
                                         setTimeout(() => {
                                             audioTest.pause();
+                                            
                                             // Redirect to main application
-                                            window.location.href = '/terminal.html'; // Change this to your main app URL
+                                            window.location.href = 'terminal.html';
                                         }, 2000);
                                     })
                                     .catch(error => {
@@ -414,8 +419,8 @@
                                         statusText.textContent = 'WARNING: Audio permission issues detected. Continue anyway?';
                                         
                                         // Change button to continue anyway
-                                        document.getElementById('access-btn').textContent = 'Continue Anyway';
-                                        document.getElementById('access-btn').style.display = 'inline-block';
+                                        accessBtn.textContent = 'Continue Anyway';
+                                        accessBtn.style.display = 'inline-block';
                                     });
                                 }
                             };
@@ -479,8 +484,8 @@
                             statusText.textContent = 'WARNING: Audio system initialization failed. Continue anyway?';
                             
                             // Change button to continue anyway
-                            document.getElementById('access-btn').textContent = 'Continue Anyway';
-                            document.getElementById('access-btn').style.display = 'inline-block';
+                            accessBtn.textContent = 'Continue Anyway';
+                            accessBtn.style.display = 'inline-block';
                         }
                     })
                     .catch(function(err) {
@@ -509,11 +514,6 @@
             
             statusText.textContent = '';
             setTimeout(typeWriter, 1000);
-            
-            // Store authorization in localStorage when granted
-            function setAuthorized() {
-                localStorage.setItem('t101Authorized', 'true');
-            }
         });
     </script>
 </body>
