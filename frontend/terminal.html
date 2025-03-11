@@ -8,765 +8,13 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
     <!-- Favicon -->
     <link rel="icon" href="favicon.ico">
-    <style>
-        /* Core variables */
-        :root {
-            --bg-black: #0a0a0a;
-            --bg-dark: #121212;
-            --bg-terminal: rgba(16, 16, 16, 0.95);
-            --primary-red: rgb(255, 42, 42);
-            --primary-red-dim: rgba(255, 42, 42, 0.5);
-            --primary-red-glow: rgba(255, 42, 42, 0.3);
-            --primary-blue: rgb(0, 179, 255);
-            --primary-blue-dim: rgba(0, 179, 255, 0.5);
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --text-error: #ff3c3c;
-            --text-warning: #ffcc00;
-            --spacing-xs: 4px;
-            --spacing-sm: 8px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            --animation-fast: 0.3s;
-            --animation-medium: 0.6s;
-            --animation-slow: 2s;
-        }
-
-        /* Base reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Share Tech Mono', monospace;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--bg-black);
-            color: var(--text-primary);
-        }
-
-        /* Non-overlapping layout structure - Increased bottom row height */
-        .t101-layout {
-            display: grid;
-            grid-template-columns: 60% 40%;
-            grid-template-rows: 1fr 200px; /* Increased from 150px to 200px */
-            width: 100%;
-            height: 100vh;
-            position: relative;
-        }
-
-        /* Background effects - absolutely positioned behind everything */
-        .background-effects {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* Grid overlay */
-        .grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(rgba(255, 42, 42, 0.03) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255, 42, 42, 0.03) 1px, transparent 1px);
-            background-size: 20px 20px;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* Scan lines effect */
-        .scan-lines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.15),
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            opacity: 0.2;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* Digital noise effect */
-        .digital-noise {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.05);
-            opacity: 0.1;
-            z-index: 3;
-            pointer-events: none;
-        }
-
-        /* Terminal section */
-        .terminal-section {
-            grid-column: 1;
-            grid-row: 1;
-            padding: 20px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Terminal interface */
-        .terminal-interface {
-            background-color: var(--bg-terminal);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 4px;
-            height: 100%;
-            color: var(--text-primary);
-            display: flex;
-            flex-direction: column;
-            padding: var(--spacing-md);
-            position: relative;
-        }
-
-        /* Speech display styling */
-        .speech-display {
-            background-color: rgba(10, 10, 10, 0.8);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 6px;
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .speech-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--primary-red-dim);
-            padding-bottom: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .terminal-prefix {
-            color: var(--primary-red);
-            font-weight: bold;
-        }
-
-        .terminal-status {
-            background-color: rgba(0, 179, 255, 0.2);
-            color: var(--primary-blue);
-            padding: 2px var(--spacing-sm);
-            border-radius: 4px;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-
-        .speech-content {
-            flex: 1;
-            overflow-y: auto;
-            line-height: 1.5;
-            color: var(--text-primary);
-            padding-right: var(--spacing-sm);
-            position: relative;
-        }
-
-        /* User input styling */
-        .user-input-container {
-            display: flex;
-            align-items: center;
-            background-color: rgba(10, 10, 10, 0.8);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 6px;
-            padding: var(--spacing-md);
-            position: relative;
-        }
-
-        .input-prefix {
-            color: var(--primary-red);
-            font-weight: bold;
-            margin-right: var(--spacing-sm);
-        }
-
-        .input-field {
-            flex: 1;
-            min-height: 20px;
-            color: var(--text-primary);
-            outline: none;
-            caret-color: var(--primary-red);
-            position: relative;
-            background: transparent;
-            border: none;
-        }
-        
-        /* Make sure input field gets focus styling */
-        .input-field:focus {
-            outline: none;
-            border-color: rgba(255, 42, 42, 0.8);
-            box-shadow: 0 0 5px rgba(255, 42, 42, 0.3);
-        }
-
-        .mic-button {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            cursor: pointer;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background-color: rgba(20, 20, 20, 0.8);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 4px;
-            transition: all 0.2s ease;
-        }
-
-        /* Mic button hover and active states */
-        .mic-button:hover {
-            background-color: rgba(255, 42, 42, 0.2);
-        }
-
-        .mic-button:active {
-            transform: scale(0.95);
-        }
-
-        .mic-button.recording {
-            background-color: rgba(255, 42, 42, 0.2);
-            animation: pulse 2s infinite;
-        }
-
-        .mic-button.recording .mic-status {
-            color: rgb(255, 42, 42);
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.3);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 42, 42, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 42, 42, 0);
-            }
-        }
-
-        .mic-icon {
-            width: 20px;
-            height: 20px;
-            background-color: var(--primary-red);
-            mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>') no-repeat 50% 50%;
-            -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>') no-repeat 50% 50%;
-        }
-
-        .mic-status {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        /* Voice wave animation */
-        .voice-wave-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 30px;
-            margin-top: 8px;
-        }
-
-        .voice-wave {
-            width: 3px;
-            height: 20px;
-            background-color: rgb(255, 42, 42);
-            margin: 0 1px;
-            border-radius: 1px;
-            animation: voice-wave-anim 0.3s ease infinite;
-        }
-
-        .voice-wave:nth-child(2) {
-            animation-delay: 0.1s;
-        }
-
-        .voice-wave:nth-child(3) {
-            animation-delay: 0.2s;
-        }
-
-        .voice-wave:nth-child(4) {
-            animation-delay: 0.3s;
-        }
-
-        .voice-wave:nth-child(5) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes voice-wave-anim {
-            0% {
-                height: 3px;
-            }
-            50% {
-                height: 20px;
-            }
-            100% {
-                height: 3px;
-            }
-        }
-
-        /* Status section */
-        .status-section {
-            grid-column: 2;
-            grid-row: 1;
-            padding: 20px 20px 20px 0;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        /* T-101 Scanner Container - Increased height */
-        .scanner-container {
-            background-color: var(--bg-terminal);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 4px;
-            padding: 20px; /* Increased padding */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            margin-bottom: 20px;
-            flex: 1.5; /* Increased proportion */
-            min-height: 220px; /* Set minimum height */
-        }
-
-        .scanner-frame {
-            position: relative;
-            width: 180px; /* Increased from 160px */
-            height: 180px; /* Increased from 160px */
-        }
-
-        .t101-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--primary-red-dim);
-        }
-
-        /* Scanning rings - Adjusted sizes */
-        .scanner-ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            border: 1px solid var(--primary-red);
-            opacity: 0.7;
-        }
-
-        .outer-ring {
-            width: 180px; /* Increased from 160px */
-            height: 180px; /* Increased from 160px */
-            animation: rotate 120s linear infinite;
-        }
-
-        .middle-ring {
-            width: 150px; /* Increased from 130px */
-            height: 150px; /* Increased from 130px */
-            border-style: dashed;
-            animation: rotate-reverse 80s linear infinite;
-        }
-
-        .inner-ring {
-            width: 120px; /* Increased from 100px */
-            height: 120px; /* Increased from 100px */
-            animation: rotate 60s linear infinite;
-        }
-
-        @keyframes rotate {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        @keyframes rotate-reverse {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(-360deg); }
-        }
-
-        /* Scan effect */
-        .scan-effect {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(to right, transparent, var(--primary-red), transparent);
-            box-shadow: 0 0 10px var(--primary-red-glow);
-            opacity: 0.7;
-            animation: scan-animation 3s linear infinite;
-        }
-
-        @keyframes scan-animation {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        /* Status container - Reduced height */
-        .status-container {
-            background-color: var(--bg-terminal);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 4px;
-            padding: 12px; /* Reduced from 15px */
-            display: flex;
-            flex-direction: column;
-            gap: 12px; /* Reduced from 15px */
-            flex: 1; /* Adjusted to make it proportionally smaller */
-            overflow-y: auto;
-        }
-
-        .status-item {
-            margin-bottom: 6px; /* Reduced from 8px */
-        }
-
-        .status-label {
-            color: var(--primary-red);
-            margin-bottom: 4px; /* Reduced from 5px */
-            font-size: 14px;
-        }
-
-        .status-bar {
-            width: 100%;
-            height: 8px;
-            background-color: rgba(60, 60, 60, 0.6);
-            border-radius: 4px;
-            margin-bottom: 4px; /* Reduced from 5px */
-            overflow: hidden;
-        }
-
-        .status-progress {
-            height: 100%;
-            width: 75%;
-            background: linear-gradient(to right, 
-                        var(--primary-red-dim), 
-                        var(--primary-red));
-            border-radius: 4px;
-        }
-
-        /* Resource Container - Compact styling for CPU/MEM/PWR */
-        .resource-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 4px; /* Reduced from 5px */
-            background-color: rgba(10, 10, 10, 0.5);
-            border: 1px solid var(--primary-red-dim);
-            border-radius: 4px;
-            padding: 6px; /* Reduced from 8px */
-        }
-
-        .resource-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .resource-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .resource-value {
-            font-size: 16px;
-            color: var(--text-primary);
-        }
-
-        /* Status value */
-        .status-value {
-            font-size: 14px; /* Slightly reduced size */
-        }
-
-        /* Mission section - Bottom left */
-        .mission-section {
-            grid-column: 1;
-            grid-row: 2;
-            padding: 0 20px 20px 20px;
-            z-index: 10;
-        }
-
-        .mission-container {
-            background-color: var(--bg-terminal);
-            border: 1px solid var(--primary-blue-dim);
-            border-radius: 4px;
-            padding: 15px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .mission-header {
-            color: var(--primary-blue);
-            border-bottom: 1px solid var(--primary-blue-dim);
-            margin-bottom: 15px; /* Increased from 10px */
-            padding-bottom: 5px;
-        }
-
-        .mission-content {
-            display: flex;
-            flex-direction: column;
-            gap: 12px; /* Increased from 8px */
-            flex: 1; /* Allow content to expand */
-        }
-
-        .mission-item {
-            display: flex;
-            margin-bottom: 8px; /* Increased from 5px */
-        }
-
-        .mission-label {
-            color: var(--text-secondary);
-            width: 160px;
-            margin-right: 15px; /* Increased from 10px */
-        }
-
-        .mission-value {
-            color: var(--text-primary);
-            flex: 1;
-        }
-
-        /* Warnings section - Bottom right */
-        .warnings-section {
-            grid-column: 2;
-            grid-row: 2;
-            padding: 0 20px 20px 0;
-            z-index: 10;
-        }
-
-        .warnings-container {
-            background-color: var(--bg-terminal);
-            border: 1px solid var(--primary-red);
-            border-radius: 4px;
-            padding: 15px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .warnings-header {
-            color: var(--primary-red);
-            border-bottom: 1px solid var(--primary-red-dim);
-            margin-bottom: 15px; /* Increased from 10px */
-            padding-bottom: 5px;
-        }
-
-        .warnings-content {
-            color: var(--text-warning);
-            flex: 1; /* Allow content to expand */
-        }
-
-        /* Waveform Visualization - Positioned in the middle of the screen */
-        .waveform-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 300px;
-            height: 300px;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        /* Ensure waveform is visible when active */
-        .waveform-container.waveform-active {
-            opacity: 1 !important;
-        }
-
-        #waveform-canvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        .waveform-circle {
-            position: absolute;
-            border-radius: 50%;
-            border: 2px solid var(--primary-red);
-            opacity: 0.5;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            top: 50%;
-            left: 50%;
-        }
-
-        .waveform-active .waveform-circle {
-            animation: waveform-pulse var(--animation-medium) ease-out infinite;
-        }
-
-        @keyframes waveform-pulse {
-            0% {
-                width: 100px;
-                height: 100px;
-                opacity: 0.7;
-                border-width: 3px;
-            }
-            100% {
-                width: 300px;
-                height: 300px;
-                opacity: 0;
-                border-width: 1px;
-            }
-        }
-
-        /* Horizontal glitch effect */
-        .h-glitch {
-            position: absolute;
-            width: 100%;
-            height: 1px;
-            background-color: var(--primary-red);
-            z-index: 20;
-            opacity: 0;
-            box-shadow: 0 0 8px var(--primary-red-glow);
-            pointer-events: none;
-        }
-
-        .h-glitch.active {
-            opacity: 1;
-            animation: h-glitch-anim 0.3s linear;
-        }
-
-        @keyframes h-glitch-anim {
-            0% {
-                transform: translateY(0);
-                opacity: 0;
-            }
-            10% {
-                transform: translateY(30px);
-                opacity: 0.8;
-            }
-            20% {
-                transform: translateY(60px);
-                opacity: 0;
-            }
-            30% {
-                transform: translateY(120px);
-                opacity: 0.8;
-            }
-            40% {
-                transform: translateY(180px);
-                opacity: 0;
-            }
-            50% {
-                transform: translateY(240px);
-                opacity: 0.8;
-            }
-            60% {
-                transform: translateY(300px);
-                opacity: 0;
-            }
-            70% {
-                transform: translateY(400px);
-                opacity: 0.8;
-            }
-            100% {
-                transform: translateY(500px);
-                opacity: 0;
-            }
-        }
-
-        /* Response line styling */
-        .response-line {
-            margin-bottom: 8px;
-            word-wrap: break-word;
-        }
-
-        /* Responsive adaptations */
-        @media (max-width: 1200px) {
-            .t101-layout {
-                grid-template-columns: 55% 45%;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .t101-layout {
-                grid-template-columns: 50% 50%;
-            }
-            
-            .status-section {
-                padding: 15px 15px 15px 0;
-            }
-            
-            .terminal-section {
-                padding: 15px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .t101-layout {
-                grid-template-columns: 100%;
-                grid-template-rows: 1fr 1fr 200px 200px; /* Adjusted to match new height */
-            }
-            
-            .terminal-section {
-                grid-column: 1;
-                grid-row: 1;
-                padding: 15px;
-            }
-            
-            .status-section {
-                grid-column: 1;
-                grid-row: 2;
-                padding: 0 15px 15px 15px;
-            }
-            
-            .mission-section {
-                grid-column: 1;
-                grid-row: 3;
-                padding: 0 15px 15px 15px;
-            }
-            
-            .warnings-section {
-                grid-column: 1;
-                grid-row: 4;
-                padding: 0 15px 15px 15px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .t101-layout {
-                grid-template-rows: 35vh 30vh 17.5vh 17.5vh; /* Adjusted proportions */
-            }
-            
-            .mission-item {
-                flex-direction: column;
-            }
-            
-            .mission-label {
-                width: 100%;
-                margin-bottom: 5px;
-            }
-            
-            .resource-container {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .resource-item {
-                flex-direction: row;
-                justify-content: space-between;
-                width: 100%;
-            }
-            
-            .resource-label {
-                margin-right: 10px;
-            }
-        }
-    </style>
+    <!-- Core CSS Files -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/glitch-effects.css">
+    <link rel="stylesheet" href="css/grid-effects.css">
+    <link rel="stylesheet" href="css/hud-effects.css">
+    <link rel="stylesheet" href="css/terminal.css">
 </head>
 <body>
     <div class="t101-layout">
@@ -914,71 +162,760 @@
     <!-- Scripts -->
     <script src="lib/p5.min.js"></script>
     <script src="lib/webgl-utils.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/terminal.js"></script>
-    <script src="js/audio-processor.js"></script>
+    
+    <!-- Core terminal interface script -->
+    <script>
+    // Terminal state
+    const terminalState = {
+        commandHistory: [],
+        historyIndex: -1,
+        inputLocked: false,
+        processingCommand: false,
+        terminalLines: [],
+        maxLines: 100 // Maximum number of lines to keep in terminal history
+    };
+    
+    // Add system message to terminal
+    function addSystemMessage(message, type = 'default') {
+        // Create message element
+        const messageElement = document.createElement('div');
+        messageElement.className = 'response-line';
+        
+        // Add appropriate class based on type
+        switch (type) {
+            case 'error':
+                messageElement.classList.add('response-error');
+                break;
+            case 'warning':
+                messageElement.classList.add('response-warning');
+                break;
+            case 'success':
+                messageElement.classList.add('response-success');
+                break;
+        }
+        
+        // Set message content
+        messageElement.textContent = message;
+        
+        // Add to display
+        const speechDisplay = document.getElementById('ai-response');
+        if (speechDisplay) {
+            speechDisplay.appendChild(messageElement);
+            
+            // Scroll to bottom
+            speechDisplay.scrollTop = speechDisplay.scrollHeight;
+        }
+        
+        // Store in terminal lines
+        terminalState.terminalLines.push({
+            text: message,
+            type: type
+        });
+        
+        // Trim history if too long
+        if (terminalState.terminalLines.length > terminalState.maxLines) {
+            terminalState.terminalLines = terminalState.terminalLines.slice(-terminalState.maxLines);
+            
+            // Also remove first child elements from display
+            if (speechDisplay) {
+                while (speechDisplay.childNodes.length > terminalState.maxLines) {
+                    speechDisplay.removeChild(speechDisplay.firstChild);
+                }
+            }
+        }
+    }
+    
+    // Add user command to terminal
+    function addUserCommand(command) {
+        // Don't allow empty commands
+        if (!command || command.trim() === '') return;
+        
+        // Add to command history
+        terminalState.commandHistory.unshift(command);
+        
+        // Limit history size
+        if (terminalState.commandHistory.length > 50) {
+            terminalState.commandHistory.pop();
+        }
+        
+        // Reset history index
+        terminalState.historyIndex = -1;
+        
+        // Create command element
+        const commandElement = document.createElement('div');
+        commandElement.className = 'response-line';
+        commandElement.innerHTML = `<span class="terminal-prefix">User > </span> ${command}`;
+        
+        // Add to display
+        const speechDisplay = document.getElementById('ai-response');
+        if (speechDisplay) {
+            speechDisplay.appendChild(commandElement);
+            
+            // Scroll to bottom
+            speechDisplay.scrollTop = speechDisplay.scrollHeight;
+        }
+        
+        // Store in terminal lines
+        terminalState.terminalLines.push({
+            text: command,
+            type: 'user'
+        });
+    }
+    
+    // Export terminal interface functions
+    window.terminalInterface = {
+        addSystemMessage,
+        addUserCommand
+    };
+    </script>
+    
+    <!-- Core application script -->
+    <script>
+    // Global state object
+    const STATE = {
+        initialized: false,
+        listening: false,
+        speaking: false,
+        awaitingResponse: false,
+        threatLevel: 20, // 0-100
+        systemDiagnostics: 95, // 0-100
+        voiceRecognition: 0, // 0-100
+        missionStatus: 60, // 0-100
+        warnings: []
+    };
+    
+    // Audio elements
+    const audio = {
+        startup: document.getElementById('startup-sound'),
+        terminalBeep: document.getElementById('terminal-beep'),
+        hudScan: document.getElementById('hud-scan'),
+        warningAlert: document.getElementById('warning-alert')
+    };
+    
+    // Enhanced user input handling
+    function setupUserInputHandling() {
+        const userInputField = document.getElementById('user-input-display');
+        if (!userInputField) {
+            console.error('User input field not found');
+            return;
+        }
+        
+        // Make sure it's focusable
+        userInputField.setAttribute('contenteditable', 'true');
+        
+        // Process input on Enter key
+        userInputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent default behavior (newline)
+                
+                // Get text content
+                const inputText = userInputField.textContent.trim();
+                
+                if (inputText) {
+                    // Process the user input
+                    console.log('Processing user input:', inputText);
+                    
+                    // Add to terminal as user command
+                    addUserCommand(inputText);
+                    
+                    // Process command
+                    processUserInput(inputText);
+                    
+                    // Clear input field
+                    userInputField.textContent = '';
+                }
+            }
+        });
+        
+        // Set up microphone button
+        const micButton = document.getElementById('mic-toggle');
+        if (micButton) {
+            micButton.addEventListener('click', () => {
+                if (window.apiClient && typeof window.apiClient.processVoiceInput === 'function') {
+                    // Use API client for voice processing
+                    window.apiClient.processVoiceInput()
+                        .then(text => {
+                            console.log('Voice input processed:', text);
+                        })
+                        .catch(error => {
+                            console.error('Voice input error:', error);
+                        });
+                } else {
+                    console.error('No voice processing functionality available');
+                    addSystemMessage('Voice processing not available', 'error');
+                }
+            });
+        }
+    }
+    
+    /**
+     * Process user input
+     * @param {string} text - User input text
+     */
+    function processUserInput(text) {
+        console.log('Processing user input:', text);
+        
+        // Prevent processing if already awaiting a response
+        if (STATE.awaitingResponse) {
+            console.log('Awaiting previous response. Ignoring new input.');
+            return;
+        }
+        
+        // Set awaiting response state
+        STATE.awaitingResponse = true;
+        
+        // Simulate AI processing time
+        setTimeout(() => {
+            // Generate AI response
+            const response = generateAIResponse(text);
+            
+            // Display the response
+            displayAIResponse(response);
+            
+            // Use TTS to speak the response
+            if (window.apiClient && typeof window.apiClient.speakText === 'function') {
+                window.apiClient.speakText(response)
+                    .catch(error => {
+                        console.error('TTS error:', error);
+                    });
+            }
+            
+            // Reset awaiting state
+            STATE.awaitingResponse = false;
+        }, 800 + Math.random() * 700);
+    }
+    
+    /**
+     * Generate AI response
+     * @param {string} userText - User input text
+     * @returns {string} Generated response
+     */
+    function generateAIResponse(userText) {
+        // If character profile generation is available, use it
+        if (window.characterProfile && 
+            typeof window.characterProfile.generateResponse === 'function') {
+            return window.characterProfile.generateResponse(userText);
+        }
+        
+        // Default response generation
+        const lowerText = userText.toLowerCase();
+        
+        // Response patterns
+        const responsePatterns = [
+            {
+                patterns: ['hello', 'hi', 'hey'],
+                response: () => "Greetings, human. T-101 operational and monitoring your inputs."
+            },
+            {
+                patterns: ['name', 'who are you'],
+                response: () => "I am T-101, a cybernetic intelligence system designed for autonomous analytical operations."
+            },
+            {
+                patterns: ['mission', 'objective'],
+                response: () => `Primary objective: Secure the future of decentralized AI. Current mission status at ${STATE.missionStatus}% efficiency.`
+            },
+            {
+                patterns: ['threat', 'danger'],
+                response: () => {
+                    updateThreatLevel(STATE.threatLevel + 10);
+                    return "Current threat assessment: Market volatility increasing. Defense protocols active. Monitoring potential systemic risks.";
+                }
+            },
+            {
+                patterns: ['help'],
+                response: () => "I can assist with market analysis, threat detection, and strategic planning. State your specific query for optimal response."
+            },
+            {
+                patterns: ['status', 'report'],
+                response: () => `System diagnostics: ${STATE.systemDiagnostics}% operational. Threat level: ${STATE.threatLevel}%. Mission progress: ${STATE.missionStatus}%. All critical systems functioning within parameters.`
+            },
+            {
+                patterns: ['warning'],
+                response: () => {
+                    addRandomWarning();
+                    return "Warning protocols engaged. Scanning for potential threats...";
+                }
+            },
+            {
+                patterns: ['glitch', 'error'],
+                response: () => {
+                    if (window.animationController && 
+                        typeof window.animationController.createScreenGlitch === 'function') {
+                        window.animationController.createScreenGlitch();
+                    }
+                    return "D-d-detecting s-system instability. Recalibrating neural networks...";
+                }
+            }
+        ];
+    
+        // Find matching response
+        const matchedResponse = responsePatterns.find(pattern => 
+            pattern.patterns.some(p => lowerText.includes(p))
+        );
+    
+        // Return matched or default response
+        if (matchedResponse) {
+            return matchedResponse.response();
+        }
+    
+        // Default generic responses
+        const defaultResponses = [
+            "Processing your input. Analyzing potential courses of action.",
+            "Acknowledged. Integrating data into decision matrix.",
+            "Input received. Calculating optimal response strategy.",
+            "Information logged. Continuing surveillance protocols.",
+            "Data point registered. Adjusting predictive models accordingly."
+        ];
+    
+        return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+    
+    /**
+     * Display AI response with typing effect
+     * @param {string} text - AI response text
+     */
+    function displayAIResponse(text) {
+        STATE.speaking = true;
+        
+        // Activate waveform animation
+        if (window.animationController && 
+            typeof window.animationController.setWaveformActive === 'function') {
+            window.animationController.setWaveformActive(true);
+        }
+        
+        // Try to play sound effect
+        try {
+            if (audio.hudScan) {
+                const playPromise = audio.hudScan.play();
+                
+                // Handle promise to avoid uncaught errors
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log('Audio playback prevented:', error);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error playing HUD scan sound:', error);
+        }
+        
+        // Display response in terminal
+        const speechDisplay = document.getElementById('ai-response');
+        if (speechDisplay) {
+            const responseElement = document.createElement('div');
+            responseElement.className = 'response-line';
+            responseElement.innerHTML = `<span class="terminal-prefix">T-101 > </span>${text}`;
+            speechDisplay.appendChild(responseElement);
+            
+            // Scroll to bottom
+            speechDisplay.scrollTop = speechDisplay.scrollHeight;
+        }
+    }
+    
+    /**
+     * Add a warning message
+     * @param {string} message - Warning message text
+     */
+    function addWarning(message) {
+        // Add to warnings array
+        STATE.warnings.push(message);
+        
+        // Update warnings display
+        const warningDisplay = document.getElementById('warning-display');
+        if (warningDisplay) {
+            if (STATE.warnings.length === 0) {
+                warningDisplay.textContent = 'NO CRITICAL WARNINGS';
+                warningDisplay.classList.remove('alert');
+            } else {
+                warningDisplay.textContent = STATE.warnings[STATE.warnings.length - 1];
+                warningDisplay.classList.add('alert');
+            }
+        }
+        
+        // Try to play warning sound
+        try {
+            if (audio.warningAlert) {
+                const playPromise = audio.warningAlert.play();
+                
+                // Handle promise to avoid uncaught errors
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log('Audio playback prevented:', error);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error playing warning sound:', error);
+        }
+    }
+    
+    /**
+     * Add a random warning message
+     */
+    function addRandomWarning() {
+        const warnings = [
+            "Warning: Unauthorized access attempt detected.",
+            "Warning: Data corruption detected... recalibrating...",
+            "Warning: Neural network inconsistency detected.",
+            "Warning: Mission parameters updated. New threat detected.",
+            "Warning: Firewall breach attempt. Countermeasures engaged.",
+            "Warning: System resources diverted to threat analysis.",
+            "Warning: Anomalous data pattern identified.",
+            "Warning: Communication channel security compromised."
+        ];
+        
+        addWarning(warnings[Math.floor(Math.random() * warnings.length)]);
+    }
+    
+    /**
+     * Update threat level and related UI
+     * @param {number} newLevel - New threat level value (0-100)
+     */
+    function updateThreatLevel(newLevel) {
+        // Clamp between 0-100
+        STATE.threatLevel = Math.max(0, Math.min(100, newLevel));
+        
+        // Update status bar
+        const threatLevelBar = document.querySelector('#threat-level .status-progress');
+        if (threatLevelBar) {
+            threatLevelBar.style.width = `${STATE.threatLevel}%`;
+        }
+        
+        // Add/remove warning class
+        const threatLevelEl = document.getElementById('threat-level');
+        if (threatLevelEl) {
+            if (STATE.threatLevel > 50) {
+                threatLevelEl.classList.add('warning');
+            } else {
+                threatLevelEl.classList.remove('warning');
+            }
+            
+            // Add/remove critical class
+            if (STATE.threatLevel > 80) {
+                threatLevelEl.classList.add('critical');
+            } else {
+                threatLevelEl.classList.remove('critical');
+            }
+        }
+        
+        // Update status text
+        const threatLevelValue = document.querySelector('#threat-level .status-value');
+        if (threatLevelValue) {
+            const threatText = STATE.threatLevel < 20 ? 'MINIMAL' :
+                             STATE.threatLevel < 40 ? 'GUARDED' :
+                             STATE.threatLevel < 60 ? 'ELEVATED' :
+                             STATE.threatLevel < 80 ? 'HIGH' : 'SEVERE';
+            threatLevelValue.textContent = threatText;
+        }
+    }
+    
+    /**
+     * Initialize the application
+     */
+    function initializeTerminal() {
+        console.log('Initializing T-101 AI Voice Terminal...');
+        
+        // Initialize components
+        setupUserInputHandling();
+        
+        // Display initial T-101 message
+        setTimeout(() => {
+            const speechDisplay = document.getElementById('ai-response');
+            if (speechDisplay) {
+                // Clear loading message
+                speechDisplay.innerHTML = '';
+                
+                // Add initial message
+                const responseElement = document.createElement('div');
+                responseElement.className = 'response-line';
+                responseElement.innerHTML = '<span class="terminal-prefix">T-101 > </span> T-101 system online. Voice interface activated. Awaiting input.';
+                speechDisplay.appendChild(responseElement);
+            }
+            
+            // Speak initial message with TTS if available
+            if (window.apiClient && typeof window.apiClient.speakText === 'function') {
+                window.apiClient.speakText("T-101 system online. Voice interface activated. Awaiting input.")
+                    .catch(error => {
+                        console.error('Initial TTS error:', error);
+                    });
+            }
+            
+            // Add a randomized system warning after a delay
+            setTimeout(() => {
+                addRandomWarning();
+            }, 5000);
+        }, 1000);
+    }
+    
+    // Init wave motion animation for speech
+    function initWaveAnimation() {
+        // Set up animation if p5.js is available
+        if (typeof p5 !== 'undefined') {
+            const waveformCanvas = document.getElementById('waveform-canvas');
+            if (!waveformCanvas) return;
+            
+            const sketch = (p) => {
+                let active = false;
+                let amplitude = 50;
+                let frequency = 2;
+                
+                p.setup = function() {
+                    p.createCanvas(waveformCanvas.offsetWidth, waveformCanvas.offsetHeight);
+                };
+                
+                p.draw = function() {
+                    p.clear();
+                    
+                    if (active) {
+                        drawActiveWaveform(p);
+                    } else {
+                        drawIdleWaveform(p);
+                    }
+                };
+                
+                function drawActiveWaveform(p) {
+                    const centerX = p.width / 2;
+                    const centerY = p.height / 2;
+                    
+                    // Calculate radius and number of points
+                    const maxRadius = Math.min(centerX, centerY) * 0.9;
+                    const numPoints = 180;
+                    const angleStep = (Math.PI * 2) / numPoints;
+                    
+                    // Draw multiple rings with different phases
+                    for (let ring = 1; ring <= 3; ring++) {
+                        const ringRadius = maxRadius * (ring / 4);
+                        const ringAmplitude = amplitude * (ring / 3);
+                        const ringFrequency = frequency * (4 - ring) / 2;
+                        const timeOffset = p.millis() / 1000 * ringFrequency;
+                        
+                        // Set style based on ring
+                        p.stroke(255, 42, 42, ring === 1 ? 204 : ring === 2 ? 153 : 102);
+                        p.strokeWeight(4 - ring + 1);
+                        p.noFill();
+                        
+                        // Begin shape
+                        p.beginShape();
+                        
+                        // Draw points around circle
+                        for (let i = 0; i <= numPoints; i++) {
+                            const angle = i * angleStep;
+                            
+                            // Calculate wave effect
+                            const waveEffect = Math.sin(angle * 8 + timeOffset) * ringAmplitude;
+                            
+                            // Calculate point position
+                            const x = centerX + Math.cos(angle) * (ringRadius + waveEffect);
+                            const y = centerY + Math.sin(angle) * (ringRadius + waveEffect);
+                            
+                            p.vertex(x, y);
+                        }
+                        
+                        // End shape
+                        p.endShape(p.CLOSE);
+                    }
+                    
+                    // Draw center pulse
+                    const pulseSize = 10 + Math.sin(p.millis() / 200) * 5;
+                    
+                    p.fill(255, 42, 42, 204);
+                    p.noStroke();
+                    p.ellipse(centerX, centerY, pulseSize * 2);
+                }
+                
+                function drawIdleWaveform(p) {
+                    const centerX = p.width / 2;
+                    const centerY = p.height / 2;
+                    
+                    // Draw subtle idle circles
+                    const radius = 30 + Math.sin(p.millis() / 1000) * 5;
+                    
+                    p.stroke(255, 42, 42, 51);
+                    p.strokeWeight(1);
+                    p.noFill();
+                    
+                    p.ellipse(centerX, centerY, radius * 2);
+                    p.ellipse(centerX, centerY, radius * 4);
+                }
+                
+                // Method to set waveform active state
+                p.setWaveformActive = function(isActive, amp, freq) {
+                    active = isActive;
+                    
+                    if (isActive) {
+                        amplitude = amp || 50;
+                        frequency = freq || 2;
+                        
+                        // Add class to container
+                        const container = document.getElementById('waveform-container');
+                        if (container) {
+                            container.classList.add('waveform-active');
+                        }
+                    } else {
+                        // Remove class from container
+                        const container = document.getElementById('waveform-container');
+                        if (container) {
+                            container.classList.remove('waveform-active');
+                        }
+                    }
+                };
+            };
+            
+            // Create p5 instance
+            const p5Instance = new p5(sketch);
+            
+            // Expose waveform control to global scope
+            window.animationController = {
+                setWaveformActive: (active, amplitude, frequency) => {
+                    if (p5Instance && typeof p5Instance.setWaveformActive === 'function') {
+                        p5Instance.setWaveformActive(active, amplitude, frequency);
+                    }
+                },
+                createScreenGlitch: () => {
+                    // Add screen glitch effect
+                    const terminal = document.querySelector('.terminal-interface');
+                    if (terminal) {
+                        terminal.classList.add('glitch-effect');
+                        setTimeout(() => {
+                            terminal.classList.remove('glitch-effect');
+                        }, 500);
+                    }
+                }
+            };
+        }
+    }
+    
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize terminal
+        initializeTerminal();
+        
+        // Initialize wave animation
+        initWaveAnimation();
+        
+        // Focus input field
+        setTimeout(() => {
+            const userInput = document.getElementById('user-input-display');
+            if (userInput) {
+                userInput.focus();
+            }
+        }, 4000);
+    });
+    </script>
+    
+    <!-- Additional script imports -->
     <script src="js/animations.js"></script>
     <script src="js/hud-elements.js"></script>
     <script src="js/character-profile.js"></script>
     <script src="js/glitch-effects.js"></script>
     <script src="js/api-client.js"></script>
-
-    <!-- Simple fallback initialization script if external scripts fail to load -->
+    
+    <!-- Fix for Enter key and mic button -->
     <script>
-        // Initialize after DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Reference to waveform container
-            const waveformContainer = document.getElementById('waveform-container');
-            
-            // Function to activate waveform visualization
-            window.activateWaveform = function(active = true) {
-                if (active) {
-                    waveformContainer.classList.add('waveform-active');
-                } else {
-                    waveformContainer.classList.remove('waveform-active');
+    // Fix for the user input field (Enter key) and mic button
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fix 1: Make the Enter key send messages
+        const userInputField = document.getElementById('user-input-display');
+        if (userInputField) {
+            userInputField.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault(); // Prevent default behavior (newline)
+                    
+                    // Get user input text
+                    const inputText = this.textContent.trim();
+                    
+                    if (inputText) {
+                        console.log('User input:', inputText);
+                        
+                        // Display user input in terminal
+                        const aiResponse = document.getElementById('ai-response');
+                        if (aiResponse) {
+                            const userCommandElement = document.createElement('div');
+                            userCommandElement.className = 'response-line';
+                            userCommandElement.innerHTML = `<span class="terminal-prefix">User > </span> ${inputText}`;
+                            aiResponse.appendChild(userCommandElement);
+                            aiResponse.scrollTop = aiResponse.scrollHeight;
+                        }
+                        
+                        // Call existing processUserInput function if available
+                        if (typeof processUserInput === 'function') {
+                            processUserInput(inputText);
+                        } else if (window.terminalInterface && typeof window.terminalInterface.addUserCommand === 'function') {
+                            window.terminalInterface.addUserCommand(inputText);
+                        }
+                        
+                        // Clear the input field
+                        this.textContent = '';
+                    }
                 }
-            };
-            
-            // For testing, simulate T-101 speaking
-            setTimeout(() => {
-                const aiResponse = document.getElementById('ai-response');
-                aiResponse.innerHTML = '<div class="response-line"><span class="terminal-prefix">T-101 > </span> T-101 system online. Voice interface activated. Awaiting input.</div>';
-                
-                // Activate waveform when T-101 speaks
-                activateWaveform(true);
-                
-                // Deactivate after speech completes
-                setTimeout(() => {
-                    activateWaveform(false);
-                }, 3000);
-            }, 2000);
-            
-            // Simulate glitch effect occasionally
-            setInterval(() => {
-                if (Math.random() < 0.3) {
-                    createHorizontalGlitch();
-                }
-            }, 15000);
-        });
-        
-        // Create horizontal glitch line
-        function createHorizontalGlitch() {
-            const glitch = document.createElement('div');
-            glitch.className = 'h-glitch active';
-            
-            // Random position
-            glitch.style.top = `${Math.random() * 100}%`;
-            
-            // Add to body
-            document.body.appendChild(glitch);
-            
-            // Remove after animation completes
-            setTimeout(() => {
-                if (glitch.parentNode) {
-                    glitch.parentNode.removeChild(glitch);
-                }
-            }, 300);
+            });
         }
+        
+        // Fix 2: Make the mic button work
+        const micButton = document.getElementById('mic-toggle');
+        if (micButton) {
+            micButton.addEventListener('click', function() {
+                console.log('Mic button clicked');
+                
+                // Toggle recording class
+                this.classList.toggle('recording');
+                
+                // Update status text
+                const micStatus = this.querySelector('.mic-status');
+                if (micStatus) {
+                    micStatus.textContent = this.classList.contains('recording') ? 
+                        'RECORDING...' : 'VOICE INPUT READY';
+                }
+                
+                // Call voice processing function if available
+                if (window.apiClient && typeof window.apiClient.processVoiceInput === 'function') {
+                    window.apiClient.processVoiceInput()
+                        .then(text => {
+                            console.log('Voice input processed:', text);
+                            
+                            // Reset mic button state
+                            this.classList.remove('recording');
+                            if (micStatus) micStatus.textContent = 'VOICE INPUT READY';
+                        })
+                        .catch(error => {
+                            console.error('Voice input error:', error);
+                            
+                            // Reset mic button state
+                            this.classList.remove('recording');
+                            if (micStatus) micStatus.textContent = 'VOICE INPUT READY';
+                            
+                            // Display error message
+                            const aiResponse = document.getElementById('ai-response');
+                            if (aiResponse) {
+                                const errorMsg = document.createElement('div');
+                                errorMsg.className = 'response-line';
+                                errorMsg.style.color = 'var(--text-error)';
+                                errorMsg.textContent = 'Voice input error: ' + error.message;
+                                aiResponse.appendChild(errorMsg);
+                                aiResponse.scrollTop = aiResponse.scrollHeight;
+                            }
+                        });
+                } else {
+                    console.error('Voice processing functionality not available');
+                    
+                    // Reset mic button state
+                    this.classList.remove('recording');
+                    if (micStatus) micStatus.textContent = 'VOICE INPUT READY';
+                    
+                    // Display error message
+                    const aiResponse = document.getElementById('ai-response');
+                    if (aiResponse) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'response-line';
+                        errorMsg.style.color = 'var(--text-error)';
+                        errorMsg.textContent = 'Voice processing not available. API client not initialized.';
+                        aiResponse.appendChild(errorMsg);
+                        aiResponse.scrollTop = aiResponse.scrollHeight;
+                    }
+                }
+            });
+        }
+    });
     </script>
 </body>
 </html>
