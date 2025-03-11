@@ -1,77 +1,137 @@
 /**
- * server.js - Backend server for T-101 AI Voice Terminal
- * Handles API requests to external services and serves the frontend
+ * T-101 AI Voice Terminal - Backend Server
+ * Handles API requests, serves frontend, and manages external service integrations
  */
 
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const multer = require('multer');
 const { Readable } = require('stream');
-const FormData = require('form-data'); // Using form-data package for Node.js
+const FormData = require('form-data');
 
 // Load environment variables
 dotenv.config();
 
 // Create Express app
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-// Set up middleware
-app.use(cors());
-app.use(express.json());
+// Middleware configuration
+app.use(cors({
+    origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files from frontend directory
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Set up multer for file uploads
+// File upload configuration
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB max file size
-    },
+        fileSize: 25 * 1024 * 1024 // 25MB max file size
+    }
 });
 
-// Environment variables for API keys
+// API Key Configuration
 const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-// Check if API keys are set
-if (!ELEVEN_LABS_API_KEY) {
-    console.warn('Warning: ELEVEN_LABS_API_KEY not set. ElevenLabs features will not work.');
+// Logging utility
+function logRequest(req, message) {
+    console.log(`[${new Date().toISOString()}] ${message}`, {
+        method: req.method,
+        path: req.path,
+        body: req.body
+    });
 }
 
-if (!OPENAI_API_KEY) {
-    console.warn('Warning: OPENAI_API_KEY not set. Whisper features will not work.');
+// Error handling middleware
+function errorHandler(err, req, res, next) {
+    console.error('Unhandled Error:', err);
+    res.status(500).json({
+        error: 'Internal Server Error',
+        message: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+}
+
+// API Key validation middleware
+function validateApiKey(req, res, next) {
+    const apiKey = req.headers['x-api-key'];
+    const validApiKey = process.env.API_KEY;
+
+    if (!apiKey || apiKey !== validApiKey) {
+        return res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Invalid or missing API key'
+        });
+    }
+
+    next();
 }
 
 // Routes
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        apis: {
+            elevenLabs: !!ELEVEN_LABS_API_KEY,
+            openAI: !!OPENAI_API_KEY
+        }
+    });
 });
 
-// ElevenLabs - Text to Speech
-app.post('/api/tts', async (req, res) => {
+// ElevenLabs Text-to-Speech endpoint
+app.post('/api/tts', validateApiKey, async (req, res) => {
+    logRequest(req, 'TTS Request Received');
+
     if (!ELEVEN_LABS_API_KEY) {
-        return res.status(500).json({ error: 'ElevenLabs API key not configured on server' });
+        return res.status(500).json({ 
+            error: 'ElevenLabs API key not configured',
+            details: 'No API key found in environment variables'
+        });
     }
-    
+
     try {
-        const { text, voiceId, modelId, stability, similarityBoost } = req.body;
-        
-        // Validate required fields
+        const { 
+            text, 
+            voiceId = 'pNInz6obpgDQGcFmaJgB', // Default masculine voice
+            modelId = 'eleven_monolingual_v1',
+            stability = 0.5,
+            similarityBoost = 0.75
+        } = req.body;
+
+        // Validate input
         if (!text) {
-            return res.status(400).json({ error: 'Text is required' });
+            return res.status(400).json({ 
+                error: 'Text is required', 
+                details: 'No text provided for speech generation' 
+            });
         }
-        
-        const voice = voiceId || 'pNInz6obpgDQGcFmaJgB'; // Default to a deep, masculine voice
-        const model = modelId || 'eleven_monolingual_v1';
-        
+
+        // Limit text length
+        if (text.length > 5000) {
+            return res.status(400).json({ 
+                error: 'Text too long', 
+                details: 'Maximum text length is 5000 characters' 
+            });
+        }
+
         // Make request to ElevenLabs API
         const response = await axios({
-            method: 'post',
-            url: `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
+            method: 'POST',
+            url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
             headers: {
                 'Accept': 'audio/mpeg',
                 'Content-Type': 'application/json',
@@ -79,106 +139,82 @@ app.post('/api/tts', async (req, res) => {
             },
             data: {
                 text,
-                model_id: model,
+                model_id: modelId,
                 voice_settings: {
-                    stability: stability || 0.75,
-                    similarity_boost: similarityBoost || 0.8
+                    stability,
+                    similarity_boost: similarityBoost
                 }
             },
             responseType: 'arraybuffer'
         });
-        
-        // Send audio data back to client
+
+        // Send audio response
         res.set('Content-Type', 'audio/mpeg');
         res.send(response.data);
     } catch (error) {
-        console.error('ElevenLabs API error:', error.response?.data || error.message);
-        
-        if (error.response?.status) {
-            res.status(error.response.status).json({ 
-                error: `ElevenLabs API error: ${error.response.status}`,
-                details: error.response.data
-            });
-        } else {
-            res.status(500).json({ error: 'Server error', details: error.message });
-        }
-    }
-});
-
-// ElevenLabs - Get Voices
-app.get('/api/voices', async (req, res) => {
-    if (!ELEVEN_LABS_API_KEY) {
-        return res.status(500).json({ error: 'ElevenLabs API key not configured on server' });
-    }
-    
-    try {
-        // Make request to ElevenLabs API
-        const response = await axios({
-            method: 'get',
-            url: 'https://api.elevenlabs.io/v1/voices',
-            headers: {
-                'xi-api-key': ELEVEN_LABS_API_KEY
-            }
+        console.error('ElevenLabs API Error:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
         });
-        
-        // Send voices data back to client
-        res.json(response.data);
-    } catch (error) {
-        console.error('ElevenLabs API error:', error.response?.data || error.message);
-        
-        if (error.response?.status) {
-            res.status(error.response.status).json({ 
-                error: `ElevenLabs API error: ${error.response.status}`,
+
+        // Detailed error response
+        if (error.response) {
+            res.status(error.response.status).json({
+                error: 'ElevenLabs API Error',
+                status: error.response.status,
                 details: error.response.data
             });
         } else {
-            res.status(500).json({ error: 'Server error', details: error.message });
+            res.status(500).json({
+                error: 'Speech Generation Failed',
+                details: error.message
+            });
         }
     }
 });
 
-// OpenAI Whisper - Transcribe Audio
-app.post('/api/transcribe', upload.single('file'), async (req, res) => {
+// OpenAI Whisper Transcription endpoint
+app.post('/api/transcribe', upload.single('file'), validateApiKey, async (req, res) => {
+    logRequest(req, 'Transcription Request Received');
+
     if (!OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OpenAI API key not configured on server' });
+        return res.status(500).json({ 
+            error: 'OpenAI API key not configured',
+            details: 'No API key found in environment variables'
+        });
     }
-    
+
     if (!req.file) {
-        return res.status(400).json({ error: 'No audio file provided' });
+        return res.status(400).json({ 
+            error: 'No file uploaded',
+            details: 'Audio file is required for transcription' 
+        });
     }
-    
+
     try {
-        // Create form data using the form-data package
         const formData = new FormData();
         
         // Create a buffer stream from the file buffer
         const bufferStream = new Readable();
         bufferStream.push(req.file.buffer);
-        bufferStream.push(null); // Mark end of stream
-        
-        // Append the file to the form data
+        bufferStream.push(null);
+
+        // Append file and parameters
         formData.append('file', bufferStream, {
             filename: req.file.originalname,
             contentType: req.file.mimetype
         });
-        
-        formData.append('model', req.body.model || 'whisper-1');
-        
-        if (req.body.language) {
-            formData.append('language', req.body.language);
-        }
-        
-        if (req.body.prompt) {
-            formData.append('prompt', req.body.prompt);
-        }
-        
-        if (req.body.temperature) {
-            formData.append('temperature', req.body.temperature);
-        }
-        
+        formData.append('model', 'whisper-1');
+
+        // Optional parameters from request
+        if (req.body.language) formData.append('language', req.body.language);
+        if (req.body.prompt) formData.append('prompt', req.body.prompt);
+        if (req.body.temperature) formData.append('temperature', req.body.temperature);
+
         // Make request to OpenAI API
         const response = await axios({
-            method: 'post',
+            method: 'POST',
             url: 'https://api.openai.com/v1/audio/transcriptions',
             headers: {
                 'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -186,48 +222,70 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
             },
             data: formData
         });
-        
-        // Send transcription data back to client
+
+        // Send transcription response
         res.json(response.data);
     } catch (error) {
-        console.error('OpenAI API error:', error.response?.data || error.message);
-        
-        if (error.response?.status) {
-            res.status(error.response.status).json({ 
-                error: `OpenAI API error: ${error.response.status}`,
+        console.error('OpenAI Transcription Error:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+        });
+
+        // Detailed error response
+        if (error.response) {
+            res.status(error.response.status).json({
+                error: 'Transcription API Error',
+                status: error.response.status,
                 details: error.response.data
             });
         } else {
-            res.status(500).json({ error: 'Server error', details: error.message });
+            res.status(500).json({
+                error: 'Transcription Failed',
+                details: error.message
+            });
         }
     }
 });
 
-// Serve static files from the 'files' directory
-app.get('/api/files/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(__dirname, 'files', filename);
-    
-    // Check if file exists
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).json({ error: 'File not found' });
-    }
+// Fallback route to serve index.html for all unmatched routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// Handle errors
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Server error', details: err.message });
-});
+// Error handling middleware (should be last)
+app.use(errorHandler);
 
 // Start server
-app.listen(port, () => {
-    console.log(`T-101 AI Voice Terminal server running on port ${port}`);
-    console.log(`Open http://localhost:${port} in your browser`);
-    
-    // Log API status
-    console.log(`ElevenLabs API: ${ELEVEN_LABS_API_KEY ? 'Configured' : 'Not configured'}`);
-    console.log(`OpenAI API: ${OPENAI_API_KEY ? 'Configured' : 'Not configured'}`);
+function startServer() {
+    try {
+        app.listen(PORT, () => {
+            console.log(`
+╔═══════════════════════════════════════════════╗
+║    T-101 AI Voice Terminal Server Started    ║
+╠═══════════════════════════════════════════════╣
+║ Port:     ${PORT}                            ║
+║ ENV:      ${process.env.NODE_ENV || 'development'}                    ║
+║ ElevenLabs: ${ELEVEN_LABS_API_KEY ? '✓ Configured' : '✗ Not Configured'}       ║
+║ OpenAI:     ${OPENAI_API_KEY ? '✓ Configured' : '✗ Not Configured'}       ║
+╚═══════════════════════════════════════════════╝
+            `);
+        });
+    } catch (error) {
+        console.error('Server startup error:', error);
+        process.exit(1);
+    }
+}
+
+// Handle uncaught exceptions and unhandled rejections
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Start the server
+startServer();

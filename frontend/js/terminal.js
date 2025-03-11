@@ -28,6 +28,9 @@ function initializeTerminal() {
     
     // Setup terminal keyboard events
     setupTerminalKeyboardEvents();
+    
+    // Initial welcome message
+    addSystemMessage('T-101 Terminal initialized. Ready for input.');
 }
 
 /**
@@ -71,14 +74,7 @@ function addSystemMessage(message, type = 'default') {
     });
     
     // Trim history if too long
-    if (terminalState.terminalLines.length > terminalState.maxLines) {
-        terminalState.terminalLines.shift();
-        // Also remove first child from display
-        if (terminalElements.speechDisplay && 
-            terminalElements.speechDisplay.childNodes.length > terminalState.maxLines) {
-            terminalElements.speechDisplay.removeChild(terminalElements.speechDisplay.childNodes[0]);
-        }
-    }
+    trimTerminalHistory();
 }
 
 /**
@@ -120,18 +116,24 @@ function addUserCommand(command) {
     });
     
     // Trim history if too long
+    trimTerminalHistory();
+}
+
+/**
+ * Trim terminal history to prevent excessive memory usage
+ */
+function trimTerminalHistory() {
+    // Trim terminal lines
     if (terminalState.terminalLines.length > terminalState.maxLines) {
-        terminalState.terminalLines.shift();
-        // Also remove first child from display
-        if (terminalElements.speechDisplay && 
-            terminalElements.speechDisplay.childNodes.length > terminalState.maxLines) {
-            terminalElements.speechDisplay.removeChild(terminalElements.speechDisplay.childNodes[0]);
+        // Remove first lines
+        terminalState.terminalLines = terminalState.terminalLines.slice(-terminalState.maxLines);
+        
+        // Also remove first child elements from display
+        if (terminalElements.speechDisplay) {
+            while (terminalElements.speechDisplay.childNodes.length > terminalState.maxLines) {
+                terminalElements.speechDisplay.removeChild(terminalElements.speechDisplay.firstChild);
+            }
         }
-    }
-    
-    // Process the command if processUserInput is available
-    if (typeof processUserInput === 'function') {
-        processUserInput(command);
     }
 }
 
@@ -154,8 +156,9 @@ function setupTerminalKeyboardEvents() {
         
         // Handle keyboard input
         terminalElements.userInput.addEventListener('keydown', (e) => {
-            // Don't process if input is locked
-            if (terminalState.inputLocked) {
+            // Don't process if input is locked or awaiting response
+            if (terminalState.inputLocked || 
+                (window.STATE && window.STATE.awaitingResponse)) {
                 e.preventDefault();
                 return;
             }
@@ -170,8 +173,10 @@ function setupTerminalKeyboardEvents() {
                     
                     // Process command if not empty
                     if (command) {
-                        // Add command to terminal
-                        addUserCommand(command);
+                        // Process the command through main input handler
+                        if (typeof processUserInput === 'function') {
+                            processUserInput(command);
+                        }
                         
                         // Clear input
                         terminalElements.userInput.textContent = '';
@@ -257,30 +262,11 @@ function placeCaretAtEnd(el) {
         selection.removeAllRanges();
         selection.addRange(range);
     } else {
-        // Fallback for older browsers (but not IE-specific TextRange)
-        el.focus();
-        // Move cursor to end by setting selection
-        // This is a more universal approach that works in most browsers
-        if (typeof el.selectionStart === 'number') {
-            el.selectionStart = el.selectionEnd = el.value.length;
-        } else {
-            // Another approach for contenteditable
-            // Create a text node with a zero-width space and append it
-            // Then place the selection after it
-            const zeroWidthSpace = document.createTextNode('\u200B');
-            el.appendChild(zeroWidthSpace);
-            
-            const range = document.createRange();
-            range.setStartAfter(zeroWidthSpace);
-            range.collapse(true);
-            
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            
-            // Remove the zero-width space after selection is set
-            el.removeChild(zeroWidthSpace);
-        }
+        // Fallback for older browsers
+        const range = document.body.createTextRange();
+        range.moveToElementText(el);
+        range.select();
+        range.collapse(false);
     }
 }
 
@@ -289,7 +275,7 @@ document.addEventListener('DOMContentLoaded', initializeTerminal);
 
 // Export functions for use in other files
 window.terminalInterface = {
-    initializeTerminal: initializeTerminal,
     addSystemMessage: addSystemMessage,
-    addUserCommand: addUserCommand
+    addUserCommand: addUserCommand,
+    initializeTerminal: initializeTerminal
 };

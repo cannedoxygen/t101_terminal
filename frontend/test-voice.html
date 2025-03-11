@@ -5,65 +5,195 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>T-101 Voice Test</title>
     <style>
-        body {
-            background: #000;
-            color: #ff2a2a;
+        :root {
+            --bg-black: #0a0a0a;
+            --primary-red: rgb(255, 42, 42);
+            --primary-blue: rgb(0, 179, 255);
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: rgba(16, 16, 16, 0.95);
+            border: 1px solid var(--primary-red);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(255, 42, 42, 0.2);
+        }
+
+        h1 {
+            color: var(--primary-red);
             text-align: center;
-            padding: 50px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
         }
-        button {
-            background: transparent;
-            color: #ff2a2a;
-            border: 1px solid #ff2a2a;
-            padding: 10px 20px;
-            margin: 10px;
-            cursor: pointer;
+
+        .input-section {
+            display: flex;
+            margin-bottom: 20px;
         }
-        input {
-            background: #111;
-            color: #ccc;
-            border: 1px solid #ff2a2a;
+
+        #textInput {
+            flex-grow: 1;
+            background-color: rgba(30, 30, 30, 0.8);
+            border: 1px solid var(--primary-red);
+            color: var(--text-primary);
             padding: 10px;
-            margin: 10px;
-            width: 80%;
-            max-width: 500px;
+            margin-right: 10px;
+        }
+
+        .btn {
+            background-color: transparent;
+            border: 2px solid var(--primary-red);
+            color: var(--primary-red);
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: rgba(255, 42, 42, 0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-secondary);
+            min-height: 30px;
+        }
+
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .voice-select {
+            background-color: rgba(30, 30, 30, 0.8);
+            border: 1px solid var(--primary-blue);
+            color: var(--text-primary);
+            padding: 10px;
+        }
+
+        .debug-info {
+            margin-top: 20px;
+            background-color: rgba(30, 30, 30, 0.8);
+            border: 1px solid var(--text-secondary);
+            padding: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
-    <h1>T-101 Voice Test</h1>
-    <p>Test direct access to ElevenLabs API</p>
-    
-    <div>
-        <input type="text" id="textInput" value="I am T-101. Voice systems online and operational.">
+    <div class="container">
+        <h1>T-101 Voice Test Terminal</h1>
+        
+        <div class="input-section">
+            <input 
+                type="text" 
+                id="textInput" 
+                placeholder="Enter text for T-101 to speak"
+                value="I am T-101. Voice systems online and operational."
+            >
+            <button id="testBtn" class="btn">TEST VOICE</button>
+        </div>
+
+        <div class="audio-controls">
+            <select id="voiceSelect" class="voice-select">
+                <option value="pNInz6obpgDQGcFmaJgB">Default Masculine Voice</option>
+                <!-- More voice options will be dynamically added -->
+            </select>
+            <select id="modelSelect" class="voice-select">
+                <option value="eleven_monolingual_v1">Standard Model</option>
+                <option value="eleven_turbo_v2">Turbo Model</option>
+            </select>
+        </div>
+
+        <div id="status">Ready for voice generation</div>
+
+        <div class="debug-info" id="debugInfo">
+            Debug information will appear here...
+        </div>
     </div>
-    
-    <div>
-        <button id="testBtn">TEST VOICE</button>
-    </div>
-    
-    <div id="status" style="margin-top: 20px;"></div>
-    
+
     <script>
+        // Voice generation test
         document.getElementById('testBtn').addEventListener('click', async function() {
             const status = document.getElementById('status');
+            const debugInfo = document.getElementById('debugInfo');
             status.textContent = 'Generating speech...';
-            
+            debugInfo.textContent = 'Initiating request...';
+
             try {
+                // Get input values
                 const text = document.getElementById('textInput').value || 'Voice test complete.';
-                
-                // Call API directly
+                const voiceId = document.getElementById('voiceSelect').value;
+                const modelId = document.getElementById('modelSelect').value;
+
+                // Detailed logging
+                console.log('Request Parameters:', {
+                    text,
+                    voiceId,
+                    modelId
+                });
+
+                // Generate request body
+                const requestBody = {
+                    text,
+                    voiceId,
+                    modelId,
+                    stability: 0.5,
+                    similarityBoost: 0.75
+                };
+
+                // Make API request
                 const response = await fetch('/api/tts', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-API-Key': localStorage.getItem('t101ApiKey') || prompt('Enter API Key:')
                     },
-                    body: JSON.stringify({ text: text })
+                    body: JSON.stringify(requestBody)
                 });
-                
+
+                // Log full response details
+                debugInfo.textContent = JSON.stringify({
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries())
+                }, null, 2);
+
+                // Check response
                 if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
+                    // Try to parse error details
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${JSON.stringify(errorData)}`);
                 }
                 
                 // Get audio blob
@@ -72,16 +202,62 @@
                 // Create audio element
                 const audio = new Audio(URL.createObjectURL(audioBlob));
                 
-                // Play audio
-                status.textContent = 'Playing audio...';
-                await audio.play();
+                // Set up audio event listeners
+                audio.onplay = () => {
+                    status.textContent = 'Playing audio...';
+                };
                 
-                status.textContent = 'Voice test successful!';
+                audio.onended = () => {
+                    status.textContent = 'Voice test successful!';
+                };
+                
+                audio.onerror = (error) => {
+                    status.textContent = 'Audio playback error';
+                    console.error('Audio playback error:', error);
+                };
+                
+                // Play audio
+                await audio.play();
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Detailed Error:', error);
                 status.textContent = `Error: ${error.message}`;
+                debugInfo.textContent = `Error Details:\n${error.stack}`;
             }
         });
+
+        // Fetch available voices on page load
+        async function fetchVoices() {
+            try {
+                const response = await fetch('/api/voices', {
+                    headers: {
+                        'X-API-Key': localStorage.getItem('t101ApiKey') || prompt('Enter API Key:')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch voices: ${response.status}`);
+                }
+
+                const voices = await response.json();
+                const voiceSelect = document.getElementById('voiceSelect');
+
+                // Clear existing options
+                voiceSelect.innerHTML = '';
+
+                // Add voices to dropdown
+                voices.voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.voice_id;
+                    option.textContent = `${voice.name} (${voice.voice_id})`;
+                    voiceSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching voices:', error);
+            }
+        }
+
+        // Call fetch voices when page loads
+        document.addEventListener('DOMContentLoaded', fetchVoices);
     </script>
 </body>
 </html>
