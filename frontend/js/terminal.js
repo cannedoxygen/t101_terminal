@@ -28,11 +28,6 @@ function initializeTerminal() {
     
     // Setup terminal keyboard events
     setupTerminalKeyboardEvents();
-    
-    // Setup microphone button click event
-    if (terminalElements.micToggle) {
-        terminalElements.micToggle.addEventListener('click', toggleMicrophone);
-    }
 }
 
 /**
@@ -134,168 +129,9 @@ function addUserCommand(command) {
         }
     }
     
-    // Process the command
-    processUserInput(command);
-}
-
-/**
- * Process user input and generate AI response
- * @param {string} command - User input to process
- */
-function processUserInput(command) {
-    // Lock input during processing
-    terminalState.inputLocked = true;
-    terminalState.processingCommand = true;
-    
-    // Generate AI response
-    let aiResponse;
-    
-    // Use character profile if available
-    if (window.characterProfile && typeof window.characterProfile.generateResponse === 'function') {
-        aiResponse = window.characterProfile.generateResponse(command);
-    } else {
-        // Fallback responses
-        const fallbackResponses = [
-            "Processing your input. Analyzing potential courses of action.",
-            "Acknowledged. Integrating data into decision matrix.",
-            "Input received. Calculating optimal response strategy.",
-            "Information logged. Continuing surveillance protocols.",
-            "Data point registered. Adjusting predictive models accordingly."
-        ];
-        aiResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
-    }
-    
-    // Display AI response with typing effect
-    displayAIResponse(aiResponse);
-    
-    // Unlock input after processing
-    setTimeout(() => {
-        terminalState.inputLocked = false;
-        terminalState.processingCommand = false;
-    }, 500);
-}
-
-/**
- * Display AI response with typing effect
- * @param {string} text - AI response text
- */
-function displayAIResponse(text) {
-    // Create response element
-    const responseElement = document.createElement('div');
-    responseElement.className = 'response-line';
-    responseElement.innerHTML = `<span class="terminal-prefix">T-101 > </span> <span class="typing-text"></span>`;
-    
-    // Add to display
-    if (terminalElements.speechDisplay) {
-        terminalElements.speechDisplay.appendChild(responseElement);
-        
-        // Scroll to bottom
-        terminalElements.speechDisplay.scrollTop = terminalElements.speechDisplay.scrollHeight;
-        
-        // Get the typing-text element we just added
-        const typingElement = responseElement.querySelector('.typing-text');
-        
-        // Type out the response
-        typeText(typingElement, text, 30, () => {
-            // Speak the text if audio is available
-            if (window.audioProcessor && typeof window.audioProcessor.speakText === 'function') {
-                window.audioProcessor.speakText(text);
-            } else if (window.apiClient && typeof window.apiClient.speakText === 'function') {
-                window.apiClient.speakText(text);
-            }
-            
-            // Add occasional glitch effect after response
-            if (Math.random() < 0.3 && window.glitchEffects) {
-                setTimeout(() => {
-                    window.glitchEffects.triggerHorizontalGlitch();
-                }, 500 + Math.random() * 1500);
-            }
-            
-            // Activate waveform if available
-            if (window.animationController && 
-                typeof window.animationController.setWaveformActive === 'function') {
-                window.animationController.setWaveformActive(true);
-                
-                // Deactivate after a few seconds
-                setTimeout(() => {
-                    window.animationController.setWaveformActive(false);
-                }, 3000);
-            }
-        });
-    }
-}
-
-/**
- * Type text with animation effect
- * @param {HTMLElement} element - Target DOM element
- * @param {string} text - Text to type
- * @param {number} speed - Typing speed in ms per character
- * @param {Function} callback - Callback function after completion
- */
-function typeText(element, text, speed, callback) {
-    if (!element) return;
-    
-    let i = 0;
-    element.textContent = '';
-    
-    // Create a container for the characters
-    const container = document.createElement('span');
-    element.appendChild(container);
-    
-    const interval = setInterval(() => {
-        if (i < text.length) {
-            // Create a span for the character
-            const char = document.createElement('span');
-            char.className = 'char';
-            char.textContent = text.charAt(i);
-            container.appendChild(char);
-            i++;
-            
-            // Scroll container if needed
-            if (element.parentElement && 
-                element.parentElement.scrollHeight > element.parentElement.clientHeight) {
-                element.parentElement.scrollTop = element.parentElement.scrollHeight;
-            }
-        } else {
-            clearInterval(interval);
-            if (callback) callback();
-        }
-    }, speed);
-}
-
-/**
- * Toggle microphone input
- */
-function toggleMicrophone() {
-    // If audio processor is available, use it
-    if (window.audioProcessor && typeof window.audioProcessor.toggleSpeechRecognition === 'function') {
-        window.audioProcessor.toggleSpeechRecognition();
-    } else if (window.apiClient && typeof window.apiClient.processVoiceInput === 'function') {
-        window.apiClient.processVoiceInput()
-            .then(text => {
-                if (text) {
-                    // Display recognized text
-                    terminalElements.userInput.textContent = text;
-                    
-                    // Process the command
-                    addUserCommand(text);
-                }
-            })
-            .catch(error => {
-                console.error('Voice input error:', error);
-                addSystemMessage(`Error: ${error.message}`, 'error');
-            });
-    } else {
-        // Fallback message if speech recognition isn't available
-        addSystemMessage("Voice recognition not available. Please type your command.", 'warning');
-        
-        // Update UI to reflect state
-        if (terminalElements.micToggle) {
-            const micStatus = terminalElements.micToggle.querySelector('.mic-status');
-            if (micStatus) {
-                micStatus.textContent = 'VOICE INPUT UNAVAILABLE';
-            }
-        }
+    // Process the command if processUserInput is available
+    if (typeof processUserInput === 'function') {
+        processUserInput(command);
     }
 }
 
@@ -411,33 +247,49 @@ function placeCaretAtEnd(el) {
     
     el.focus();
     
-    if (typeof window.getSelection !== "undefined" &&
-        typeof document.createRange !== "undefined") {
+    // Modern approach for all modern browsers
+    if (window.getSelection && document.createRange) {
         const range = document.createRange();
         range.selectNodeContents(el);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-    } else if (typeof document.body.createTextRange !== "undefined") {
-        const textRange = document.body.createTextRange();
-        textRange.moveToElementText(el);
-        textRange.collapse(false);
-        textRange.select();
+        range.collapse(false); // false means collapse to end rather than start
+        
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+    } else {
+        // Fallback for older browsers (but not IE-specific TextRange)
+        el.focus();
+        // Move cursor to end by setting selection
+        // This is a more universal approach that works in most browsers
+        if (typeof el.selectionStart === 'number') {
+            el.selectionStart = el.selectionEnd = el.value.length;
+        } else {
+            // Another approach for contenteditable
+            // Create a text node with a zero-width space and append it
+            // Then place the selection after it
+            const zeroWidthSpace = document.createTextNode('\u200B');
+            el.appendChild(zeroWidthSpace);
+            
+            const range = document.createRange();
+            range.setStartAfter(zeroWidthSpace);
+            range.collapse(true);
+            
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // Remove the zero-width space after selection is set
+            el.removeChild(zeroWidthSpace);
+        }
     }
 }
 
 // Initialize terminal when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeTerminal);
 
-// Make processUserInput available globally
-window.processUserInput = processUserInput;
-
 // Export functions for use in other files
 window.terminalInterface = {
     initializeTerminal: initializeTerminal,
     addSystemMessage: addSystemMessage,
-    addUserCommand: addUserCommand,
-    processUserInput: processUserInput,
-    displayAIResponse: displayAIResponse
+    addUserCommand: addUserCommand
 };

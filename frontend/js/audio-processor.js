@@ -28,7 +28,13 @@ const audioState = {
     elevenLabsApiKey: '',
     whisperApiKey: '',
     useLocalFallback: true,  // Use browser's APIs if external APIs unavailable
-    apiInitialized: false
+    apiInitialized: false,
+    
+    // Feature detection flags
+    hasSpeechRecognition: false,
+    hasSpeechSynthesis: false,
+    hasAudioContext: false,
+    hasMediaRecorder: false
 };
 
 /**
@@ -51,17 +57,59 @@ function initializeAudioProcessor(config = {}) {
         audioState.useLocalFallback = config.useLocalFallback;
     }
     
-    // Initialize audio context for visualizations
-    initializeAudioContext();
+    // Check for feature support
+    detectFeatureSupport();
     
-    // Initialize speech recognition
-    initializeSpeechRecognition();
+    // Initialize audio context for visualizations if supported
+    if (audioState.hasAudioContext) {
+        initializeAudioContext();
+    } else {
+        console.warn('AudioContext not supported in this browser. Audio visualizations will be disabled.');
+    }
     
-    // Initialize speech synthesis
-    initializeSpeechSynthesis();
+    // Initialize speech recognition if supported
+    if (audioState.hasSpeechRecognition) {
+        initializeSpeechRecognition();
+    } else {
+        console.warn('Speech Recognition not supported in this browser. Will use Whisper API if available.');
+    }
+    
+    // Initialize speech synthesis if supported
+    if (audioState.hasSpeechSynthesis) {
+        initializeSpeechSynthesis();
+    } else {
+        console.warn('Speech Synthesis not supported in this browser. Will use ElevenLabs API if available.');
+    }
     
     // Mark as initialized
     audioState.apiInitialized = true;
+}
+
+/**
+ * Detect feature support in the current browser
+ */
+function detectFeatureSupport() {
+    // Check for SpeechRecognition support
+    audioState.hasSpeechRecognition = !!(window.SpeechRecognition || 
+                                        window.webkitSpeechRecognition || 
+                                        window.mozSpeechRecognition || 
+                                        window.msSpeechRecognition);
+    
+    // Check for SpeechSynthesis support
+    audioState.hasSpeechSynthesis = !!(window.speechSynthesis);
+    
+    // Check for AudioContext support
+    audioState.hasAudioContext = !!(window.AudioContext || window.webkitAudioContext);
+    
+    // Check for MediaRecorder support
+    audioState.hasMediaRecorder = !!(window.MediaRecorder);
+    
+    console.log('Feature detection:', {
+        SpeechRecognition: audioState.hasSpeechRecognition,
+        SpeechSynthesis: audioState.hasSpeechSynthesis,
+        AudioContext: audioState.hasAudioContext,
+        MediaRecorder: audioState.hasMediaRecorder
+    });
 }
 
 /**
@@ -84,6 +132,7 @@ function initializeAudioContext() {
         console.log('Audio context initialized');
     } catch (error) {
         console.error('Error initializing audio context:', error);
+        audioState.hasAudioContext = false;
     }
 }
 
@@ -91,200 +140,222 @@ function initializeAudioContext() {
  * Initialize speech recognition
  */
 function initializeSpeechRecognition() {
-    // Check if Web Speech API is available
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    // Double-check if Web Speech API is available
+    if (!audioState.hasSpeechRecognition) {
         console.warn('Speech recognition not supported in this browser');
         return;
     }
     
-    // Create speech recognition object
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    audioState.recognition = new SpeechRecognition();
-    
-    // Configure
-    audioState.recognition.continuous = true;
-    audioState.recognition.interimResults = true;
-    audioState.recognition.lang = 'en-US';
-    
-    // Set up event handlers
-    audioState.recognition.onstart = () => {
-        console.log('Speech recognition started');
-        audioState.recognizing = true;
+    try {
+        // Create speech recognition object with proper browser prefix
+        const SpeechRecognition = window.SpeechRecognition || 
+                                  window.webkitSpeechRecognition || 
+                                  window.mozSpeechRecognition || 
+                                  window.msSpeechRecognition;
+                                  
+        audioState.recognition = new SpeechRecognition();
         
-        // Trigger UI updates
-        if (window.hudController && typeof window.hudController.activateScanning === 'function') {
-            window.hudController.activateScanning(true);
-        }
+        // Configure
+        audioState.recognition.continuous = true;
+        audioState.recognition.interimResults = true;
+        audioState.recognition.lang = 'en-US';
         
-        // Update mic button if exists
-        const micButton = document.getElementById('mic-toggle');
-        if (micButton) {
-            micButton.classList.add('recording');
-            const micStatus = micButton.querySelector('.mic-status');
-            if (micStatus) {
-                micStatus.textContent = 'RECORDING...';
-            }
-        }
-    };
-    
-    audioState.recognition.onend = () => {
-        console.log('Speech recognition ended');
-        audioState.recognizing = false;
-        
-        // Trigger UI updates
-        if (window.hudController && typeof window.hudController.activateScanning === 'function') {
-            window.hudController.activateScanning(false);
-        }
-        
-        // Update mic button if exists
-        const micButton = document.getElementById('mic-toggle');
-        if (micButton) {
-            micButton.classList.remove('recording');
-            const micStatus = micButton.querySelector('.mic-status');
-            if (micStatus) {
-                micStatus.textContent = 'VOICE INPUT READY';
-            }
-        }
-    };
-    
-    audioState.recognition.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-        
-        // Process results
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
+        // Set up event handlers
+        audioState.recognition.onstart = () => {
+            console.log('Speech recognition started');
+            audioState.recognizing = true;
             
-            if (event.results[i].isFinal) {
-                finalTranscript += transcript;
-            } else {
-                interimTranscript += transcript;
+            // Trigger UI updates
+            if (window.hudController && typeof window.hudController.activateScanning === 'function') {
+                window.hudController.activateScanning(true);
             }
-        }
-        
-        // Update state
-        if (finalTranscript) {
-            audioState.lastRecognizedText = finalTranscript;
             
-            // Display recognized text
-            displayRecognizedText(finalTranscript, true);
-            
-            // Process the command
-            if (typeof processUserInput === 'function') {
-                processUserInput(finalTranscript);
+            // Update mic button if exists
+            const micButton = document.getElementById('mic-toggle');
+            if (micButton) {
+                micButton.classList.add('recording');
+                const micStatus = micButton.querySelector('.mic-status');
+                if (micStatus) {
+                    micStatus.textContent = 'RECORDING...';
+                }
             }
-        }
-        
-        if (interimTranscript) {
-            audioState.interimResult = interimTranscript;
-            
-            // Display interim result
-            displayRecognizedText(interimTranscript, false);
-        }
-    };
-    
-    audioState.recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        
-        // Show error in UI
-        const errorMessages = {
-            'no-speech': 'No speech detected',
-            'audio-capture': 'Audio capture failed',
-            'not-allowed': 'Microphone access denied',
-            'network': 'Network error',
-            'aborted': 'Recognition aborted',
-            'service-not-allowed': 'Service not allowed'
         };
         
-        const errorMessage = errorMessages[event.error] || `Error: ${event.error}`;
+        audioState.recognition.onend = () => {
+            console.log('Speech recognition ended');
+            audioState.recognizing = false;
+            
+            // Trigger UI updates
+            if (window.hudController && typeof window.hudController.activateScanning === 'function') {
+                window.hudController.activateScanning(false);
+            }
+            
+            // Update mic button if exists
+            const micButton = document.getElementById('mic-toggle');
+            if (micButton) {
+                micButton.classList.remove('recording');
+                const micStatus = micButton.querySelector('.mic-status');
+                if (micStatus) {
+                    micStatus.textContent = 'VOICE INPUT READY';
+                }
+            }
+        };
         
-        // Display error in terminal if available
-        if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
-            window.terminalInterface.addSystemMessage(errorMessage, 'error');
-        } else {
-            console.error(errorMessage);
-        }
+        audioState.recognition.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            
+            // Process results
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+            
+            // Update state
+            if (finalTranscript) {
+                audioState.lastRecognizedText = finalTranscript;
+                
+                // Display recognized text
+                displayRecognizedText(finalTranscript, true);
+                
+                // Process the command
+                if (typeof processUserInput === 'function') {
+                    processUserInput(finalTranscript);
+                }
+            }
+            
+            if (interimTranscript) {
+                audioState.interimResult = interimTranscript;
+                
+                // Display interim result
+                displayRecognizedText(interimTranscript, false);
+            }
+        };
         
-        // Stop recognition
-        stopSpeechRecognition();
-    };
-    
-    console.log('Speech recognition initialized');
+        audioState.recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            
+            // Show error in UI
+            const errorMessages = {
+                'no-speech': 'No speech detected',
+                'audio-capture': 'Audio capture failed',
+                'not-allowed': 'Microphone access denied',
+                'network': 'Network error',
+                'aborted': 'Recognition aborted',
+                'service-not-allowed': 'Service not allowed'
+            };
+            
+            const errorMessage = errorMessages[event.error] || `Error: ${event.error}`;
+            
+            // Display error in terminal if available
+            if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+                window.terminalInterface.addSystemMessage(errorMessage, 'error');
+            } else {
+                console.error(errorMessage);
+            }
+            
+            // Stop recognition
+            stopSpeechRecognition();
+        };
+        
+        console.log('Speech recognition initialized');
+    } catch (error) {
+        console.error('Error initializing speech recognition:', error);
+        audioState.hasSpeechRecognition = false;
+    }
 }
 
 /**
  * Initialize speech synthesis
  */
 function initializeSpeechSynthesis() {
-    // Check if Web Speech API synthesis is available
-    if (!('speechSynthesis' in window)) {
+    // Double-check if Web Speech API synthesis is available
+    if (!audioState.hasSpeechSynthesis) {
         console.warn('Speech synthesis not supported in this browser');
         return;
     }
     
-    // Store reference
-    audioState.speechSynthesis = window.speechSynthesis;
-    
-    // Load available voices
-    loadVoices();
-    
-    // Chrome loads voices asynchronously, so we need to wait for them
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
+    try {
+        // Store reference
+        audioState.speechSynthesis = window.speechSynthesis;
+        
+        // Load available voices
+        loadVoices();
+        
+        // Chrome loads voices asynchronously, so we need to wait for them
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        
+        console.log('Speech synthesis initialized');
+    } catch (error) {
+        console.error('Error initializing speech synthesis:', error);
+        audioState.hasSpeechSynthesis = false;
     }
-    
-    console.log('Speech synthesis initialized');
 }
 
 /**
  * Load available voices for speech synthesis
  */
 function loadVoices() {
-    // Get all available voices
-    audioState.voices = audioState.speechSynthesis.getVoices();
-    
-    // Select a suitable voice (prefer deep, male voices for T-101)
-    let selectedVoice = null;
-    
-    // Try to find a good match
-    for (const voice of audioState.voices) {
-        // Ideal matches
-        if (voice.name.toLowerCase().includes('daniel') || 
-            voice.name.toLowerCase().includes('google uk english male') ||
-            voice.name.toLowerCase().includes('microsoft david')) {
-            selectedVoice = voice;
-            break;
-        }
+    if (!audioState.hasSpeechSynthesis || !audioState.speechSynthesis) {
+        return;
     }
     
-    // If no ideal match, try any male voice
-    if (!selectedVoice) {
+    try {
+        // Get all available voices
+        audioState.voices = audioState.speechSynthesis.getVoices();
+        
+        // Select a suitable voice (prefer deep, male voices for T-101)
+        let selectedVoice = null;
+        
+        // Try to find a good match
         for (const voice of audioState.voices) {
-            if (voice.name.toLowerCase().includes('male')) {
+            // Ideal matches
+            if (voice.name.toLowerCase().includes('daniel') || 
+                voice.name.toLowerCase().includes('google uk english male') ||
+                voice.name.toLowerCase().includes('microsoft david')) {
                 selectedVoice = voice;
                 break;
             }
         }
+        
+        // If no ideal match, try any male voice
+        if (!selectedVoice) {
+            for (const voice of audioState.voices) {
+                if (voice.name.toLowerCase().includes('male')) {
+                    selectedVoice = voice;
+                    break;
+                }
+            }
+        }
+        
+        // Finally, just pick the first voice if still no match
+        if (!selectedVoice && audioState.voices.length > 0) {
+            selectedVoice = audioState.voices[0];
+        }
+        
+        // Store selected voice
+        audioState.selectedVoice = selectedVoice;
+        
+        console.log('Voices loaded, selected:', selectedVoice ? selectedVoice.name : 'None available');
+    } catch (error) {
+        console.error('Error loading voices:', error);
     }
-    
-    // Finally, just pick the first voice if still no match
-    if (!selectedVoice && audioState.voices.length > 0) {
-        selectedVoice = audioState.voices[0];
-    }
-    
-    // Store selected voice
-    audioState.selectedVoice = selectedVoice;
-    
-    console.log('Voices loaded, selected:', selectedVoice ? selectedVoice.name : 'None available');
 }
 
 /**
  * Start speech recognition
  */
 function startSpeechRecognition() {
-    if (!audioState.recognition) {
-        console.warn('Speech recognition not initialized');
-        return;
+    if (!audioState.hasSpeechRecognition || !audioState.recognition) {
+        console.warn('Speech recognition not available, using alternative method');
+        return startAlternativeRecognition();
     }
     
     if (audioState.recognizing) {
@@ -301,15 +372,77 @@ function startSpeechRecognition() {
         return true;
     } catch (error) {
         console.error('Error starting speech recognition:', error);
+        return startAlternativeRecognition();
+    }
+}
+
+/**
+ * Start alternative recognition method when SpeechRecognition API is not available
+ * This uses MediaRecorder and sends audio to the server for processing with Whisper
+ */
+function startAlternativeRecognition() {
+    if (!audioState.hasMediaRecorder) {
+        console.error('Neither SpeechRecognition nor MediaRecorder is available in this browser');
+        
+        // Display error message
+        if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+            window.terminalInterface.addSystemMessage(
+                'Voice recognition is not supported in this browser. Please try typing instead.',
+                'error'
+            );
+        }
+        
         return false;
     }
+    
+    // Use MediaRecorder to capture audio and then send to server (or Whisper API)
+    if (typeof recordAudio === 'function') {
+        recordAudio(10000) // 10 seconds max
+            .then(audioBlob => {
+                // Display processing message
+                if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+                    window.terminalInterface.addSystemMessage('Processing audio...', 'default');
+                }
+                
+                // Transcribe with Whisper if available
+                if (typeof window.apiClient !== 'undefined' && 
+                    typeof window.apiClient.transcribeAudio === 'function') {
+                    return window.apiClient.transcribeAudio(audioBlob);
+                } else {
+                    throw new Error('No transcription service available');
+                }
+            })
+            .then(text => {
+                // Display recognized text
+                displayRecognizedText(text, true);
+                
+                // Process the command
+                if (typeof processUserInput === 'function') {
+                    processUserInput(text);
+                }
+            })
+            .catch(error => {
+                console.error('Alternative recognition failed:', error);
+                
+                if (window.terminalInterface && typeof window.terminalInterface.addSystemMessage === 'function') {
+                    window.terminalInterface.addSystemMessage(
+                        'Voice recognition failed: ' + error.message,
+                        'error'
+                    );
+                }
+            });
+        
+        return true;
+    }
+    
+    return false;
 }
 
 /**
  * Stop speech recognition
  */
 function stopSpeechRecognition() {
-    if (!audioState.recognition) return;
+    if (!audioState.hasSpeechRecognition || !audioState.recognition) return false;
     
     try {
         if (audioState.recognizing) {
@@ -374,18 +507,26 @@ function speakText(text, options = {}) {
                 .catch(error => {
                     console.warn('ElevenLabs speech failed, falling back to local synthesis:', error);
                     
-                    // Fall back to local synthesis
-                    speakWithLocalSynthesis(text, options)
-                        .then(resolve)
-                        .catch(reject);
+                    // Fall back to local synthesis if available
+                    if (audioState.hasSpeechSynthesis) {
+                        speakWithLocalSynthesis(text, options)
+                            .then(resolve)
+                            .catch(reject);
+                    } else {
+                        reject(new Error('Speech synthesis not available'));
+                    }
                 });
             return;
         }
         
-        // Otherwise use local speech synthesis
-        speakWithLocalSynthesis(text, options)
-            .then(resolve)
-            .catch(reject);
+        // Otherwise use local speech synthesis if available
+        if (audioState.hasSpeechSynthesis) {
+            speakWithLocalSynthesis(text, options)
+                .then(resolve)
+                .catch(reject);
+        } else {
+            reject(new Error('Speech synthesis not available'));
+        }
     });
 }
 
@@ -397,7 +538,7 @@ function speakText(text, options = {}) {
  */
 function speakWithLocalSynthesis(text, options = {}) {
     return new Promise((resolve, reject) => {
-        if (!audioState.speechSynthesis) {
+        if (!audioState.hasSpeechSynthesis || !audioState.speechSynthesis) {
             reject(new Error('Speech synthesis not available'));
             return;
         }
@@ -461,6 +602,15 @@ function speakWithElevenLabs(text, options = {}) {
     return new Promise((resolve, reject) => {
         if (!audioState.elevenLabsApiKey) {
             reject(new Error('ElevenLabs API key not set'));
+            return;
+        }
+        
+        // Check if we have the API client available
+        if (typeof window.apiClient !== 'undefined' && 
+            typeof window.apiClient.speakText === 'function') {
+            window.apiClient.speakText(text, options)
+                .then(resolve)
+                .catch(reject);
             return;
         }
         
@@ -556,29 +706,35 @@ function speakWithElevenLabs(text, options = {}) {
  * Start audio visualization
  */
 function startAudioVisualization() {
-    if (!audioState.audioContext || audioState.visualizationActive) return;
+    if (!audioState.hasAudioContext || !audioState.audioContext || audioState.visualizationActive) {
+        return;
+    }
     
-    // Get user media
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        .then(stream => {
-            // Store stream
-            audioState.microphoneStream = stream;
-            
-            // Create source from microphone
-            const source = audioState.audioContext.createMediaStreamSource(stream);
-            
-            // Connect to analyser
-            source.connect(audioState.analyser);
-            
-            // Mark as active
-            audioState.visualizationActive = true;
-            
-            // Start visualization loop
-            visualize();
-        })
-        .catch(error => {
-            console.error('Error accessing microphone:', error);
-        });
+    try {
+        // Get user media
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(stream => {
+                // Store stream
+                audioState.microphoneStream = stream;
+                
+                // Create source from microphone
+                const source = audioState.audioContext.createMediaStreamSource(stream);
+                
+                // Connect to analyser
+                source.connect(audioState.analyser);
+                
+                // Mark as active
+                audioState.visualizationActive = true;
+                
+                // Start visualization loop
+                visualize();
+            })
+            .catch(error => {
+                console.error('Error accessing microphone:', error);
+            });
+    } catch (error) {
+        console.error('Error starting audio visualization:', error);
+    }
 }
 
 /**
@@ -587,42 +743,51 @@ function startAudioVisualization() {
 function stopAudioVisualization() {
     if (!audioState.visualizationActive) return;
     
-    // Stop all tracks
-    if (audioState.microphoneStream) {
-        audioState.microphoneStream.getTracks().forEach(track => track.stop());
-        audioState.microphoneStream = null;
+    try {
+        // Stop all tracks
+        if (audioState.microphoneStream) {
+            audioState.microphoneStream.getTracks().forEach(track => track.stop());
+            audioState.microphoneStream = null;
+        }
+        
+        // Mark as inactive
+        audioState.visualizationActive = false;
+    } catch (error) {
+        console.error('Error stopping audio visualization:', error);
     }
-    
-    // Mark as inactive
-    audioState.visualizationActive = false;
 }
 
 /**
  * Visualize audio data
  */
 function visualize() {
-    if (!audioState.visualizationActive) return;
+    if (!audioState.visualizationActive || !audioState.hasAudioContext) return;
     
-    // Get waveform data
-    audioState.analyser.getByteFrequencyData(audioState.dataArray);
-    
-    // Calculate average volume
-    let sum = 0;
-    for (let i = 0; i < audioState.dataArray.length; i++) {
-        sum += audioState.dataArray[i];
+    try {
+        // Get waveform data
+        audioState.analyser.getByteFrequencyData(audioState.dataArray);
+        
+        // Calculate average volume
+        let sum = 0;
+        for (let i = 0; i < audioState.dataArray.length; i++) {
+            sum += audioState.dataArray[i];
+        }
+        const average = sum / audioState.dataArray.length;
+        
+        // Map average to amplitude
+        const amplitude = Math.max(10, average * 2);
+        
+        // Update waveform if available
+        if (window.animationController && typeof window.animationController.setWaveformActive === 'function') {
+            window.animationController.setWaveformActive(true, amplitude, 3);
+        }
+        
+        // Continue visualization loop
+        requestAnimationFrame(visualize);
+    } catch (error) {
+        console.error('Error during visualization:', error);
+        audioState.visualizationActive = false;
     }
-    const average = sum / audioState.dataArray.length;
-    
-    // Map average to amplitude
-    const amplitude = Math.max(10, average * 2);
-    
-    // Update waveform if available
-    if (window.animationController && typeof window.animationController.setWaveformActive === 'function') {
-        window.animationController.setWaveformActive(true, amplitude, 3);
-    }
-    
-    // Continue visualization loop
-    requestAnimationFrame(visualize);
 }
 
 /**
@@ -632,8 +797,17 @@ function visualize() {
  */
 function transcribeAudioFile(audioFile) {
     return new Promise((resolve, reject) => {
-        if (!audioState.whisperApiKey) {
-            reject(new Error('Whisper API key not set'));
+        if (!audioState.whisperApiKey && !window.apiClient) {
+            reject(new Error('Whisper API key not set and no API client available'));
+            return;
+        }
+        
+        // Use API client if available
+        if (typeof window.apiClient !== 'undefined' && 
+            typeof window.apiClient.transcribeAudio === 'function') {
+            window.apiClient.transcribeAudio(audioFile)
+                .then(resolve)
+                .catch(reject);
             return;
         }
         

@@ -574,8 +574,45 @@ function processVoiceInput(maxDuration = 5000) {
     });
 }
 
+/**
+ * Read file contents - this reimplements the window.fs.readFile functionality for browser context
+ * @param {string} filename - The name of the file to read
+ * @param {Object} options - Optional parameters
+ * @returns {Promise} Promise that resolves with file contents
+ */
+function readFile(filename, options = {}) {
+    return new Promise((resolve, reject) => {
+        // In the browser context, we need to make a server request to get the file
+        fetch(`/api/files/${encodeURIComponent(filename)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to read file ${filename}: ${response.status} ${response.statusText}`);
+                }
+                
+                // Check if response should be returned as text or buffer
+                if (options.encoding === 'utf8') {
+                    return response.text();
+                } else {
+                    return response.arrayBuffer().then(buffer => new Uint8Array(buffer));
+                }
+            })
+            .then(data => {
+                resolve(data);
+            })
+            .catch(error => {
+                console.error('Error reading file:', error);
+                reject(error);
+            });
+    });
+}
+
 // Export functions for use in other files
 if (typeof window !== 'undefined') {
+    // Add file system API to window for compatibility
+    window.fs = {
+        readFile: readFile
+    };
+    
     // Add to window object for access from other scripts
     window.apiClient = {
         initializeApiClient,

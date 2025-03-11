@@ -10,6 +10,8 @@ const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const { Readable } = require('stream');
+const FormData = require('form-data'); // Using form-data package for Node.js
 
 // Load environment variables
 dotenv.config();
@@ -146,12 +148,20 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
     }
     
     try {
-        // Create form data
+        // Create form data using the form-data package
         const formData = new FormData();
         
-        // Convert buffer to blob
-        const audioBlob = new Blob([req.file.buffer], { type: req.file.mimetype });
-        formData.append('file', audioBlob, req.file.originalname);
+        // Create a buffer stream from the file buffer
+        const bufferStream = new Readable();
+        bufferStream.push(req.file.buffer);
+        bufferStream.push(null); // Mark end of stream
+        
+        // Append the file to the form data
+        formData.append('file', bufferStream, {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+        
         formData.append('model', req.body.model || 'whisper-1');
         
         if (req.body.language) {
@@ -172,7 +182,7 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
             url: 'https://api.openai.com/v1/audio/transcriptions',
             headers: {
                 'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                'Content-Type': 'multipart/form-data'
+                ...formData.getHeaders()
             },
             data: formData
         });
@@ -190,6 +200,19 @@ app.post('/api/transcribe', upload.single('file'), async (req, res) => {
         } else {
             res.status(500).json({ error: 'Server error', details: error.message });
         }
+    }
+});
+
+// Serve static files from the 'files' directory
+app.get('/api/files/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, 'files', filename);
+    
+    // Check if file exists
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).json({ error: 'File not found' });
     }
 });
 
