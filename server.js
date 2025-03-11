@@ -20,11 +20,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Debug environment variables (without exposing actual keys)
+console.log('Environment check:');
+console.log('- ELEVEN_LABS_API_KEY exists:', !!process.env.ELEVEN_LABS_API_KEY);
+console.log('- OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+
 // Middleware configuration
 app.use(cors({
     origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -65,6 +70,11 @@ function errorHandler(err, req, res, next) {
 
 // API Key validation middleware
 function validateApiKey(req, res, next) {
+    // Skip validation if no API key is configured
+    if (!process.env.API_KEY) {
+        return next();
+    }
+
     const apiKey = req.headers['x-api-key'];
     const validApiKey = process.env.API_KEY;
 
@@ -92,8 +102,50 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ElevenLabs voice list endpoint
+app.get('/api/voices', async (req, res) => {
+    if (!ELEVEN_LABS_API_KEY) {
+        return res.status(500).json({ 
+            error: 'ElevenLabs API key not configured',
+            details: 'No API key found in environment variables'
+        });
+    }
+
+    try {
+        const response = await axios({
+            method: 'GET',
+            url: 'https://api.elevenlabs.io/v1/voices',
+            headers: {
+                'Accept': 'application/json',
+                'xi-api-key': ELEVEN_LABS_API_KEY
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error('ElevenLabs Voice List Error:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+        });
+
+        if (error.response) {
+            res.status(error.response.status).json({
+                error: 'ElevenLabs API Error',
+                status: error.response.status,
+                details: error.response.data
+            });
+        } else {
+            res.status(500).json({
+                error: 'Voice List Failed',
+                details: error.message
+            });
+        }
+    }
+});
+
 // ElevenLabs Text-to-Speech endpoint
-app.post('/api/tts', validateApiKey, async (req, res) => {
+app.post('/api/tts', async (req, res) => {
     logRequest(req, 'TTS Request Received');
 
     if (!ELEVEN_LABS_API_KEY) {
@@ -106,7 +158,7 @@ app.post('/api/tts', validateApiKey, async (req, res) => {
     try {
         const { 
             text, 
-            voiceId = 'pNInz6obpgDQGcFmaJgB', // Default masculine voice
+            voiceId = '2EiwWnXFnvU5JabPnv8n', // Clyde voice
             modelId = 'eleven_monolingual_v1',
             stability = 0.5,
             similarityBoost = 0.75
@@ -128,6 +180,12 @@ app.post('/api/tts', validateApiKey, async (req, res) => {
             });
         }
 
+        console.log('TTS Request Details:', {
+            voiceId,
+            modelId,
+            textLength: text.length
+        });
+
         // Make request to ElevenLabs API
         const response = await axios({
             method: 'POST',
@@ -148,22 +206,33 @@ app.post('/api/tts', validateApiKey, async (req, res) => {
             responseType: 'arraybuffer'
         });
 
+        console.log('TTS Response received, content length:', response.data.length);
+
         // Send audio response
         res.set('Content-Type', 'audio/mpeg');
         res.send(response.data);
     } catch (error) {
         console.error('ElevenLabs API Error:', {
             status: error.response?.status,
-            data: error.response?.data,
             message: error.message
         });
+
+        // If error response data is binary (arraybuffer), convert to string
+        let errorData = error.response?.data;
+        if (errorData && errorData.constructor === ArrayBuffer) {
+            try {
+                errorData = JSON.parse(Buffer.from(errorData).toString('utf8'));
+            } catch (e) {
+                errorData = 'Binary response error';
+            }
+        }
 
         // Detailed error response
         if (error.response) {
             res.status(error.response.status).json({
                 error: 'ElevenLabs API Error',
                 status: error.response.status,
-                details: error.response.data
+                details: errorData || 'Unknown error'
             });
         } else {
             res.status(500).json({
@@ -175,7 +244,7 @@ app.post('/api/tts', validateApiKey, async (req, res) => {
 });
 
 // OpenAI Whisper Transcription endpoint
-app.post('/api/transcribe', upload.single('file'), validateApiKey, async (req, res) => {
+app.post('/api/transcribe', upload.single('file'), async (req, res) => {
     logRequest(req, 'Transcription Request Received');
 
     if (!OPENAI_API_KEY) {
